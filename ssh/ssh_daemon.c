@@ -144,15 +144,18 @@ void ssh_daemon(void) {
       return;
   }
 
-  ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDADDR, BINDADDR);
-  ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDPORT_STR, BINDPORT);
-
-  ssh_bind_options_set(bind, SSH_BIND_OPTIONS_RSAKEY,   KEYS_FOLDER "rsa-key");
-  ssh_bind_options_set(bind, SSH_BIND_OPTIONS_ECDSAKEY, KEYS_FOLDER "ecdsa-key");
-
-  ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BANNER, "Welcome to spaceGame II");
   const int log_level = SSH_LOG_WARNING;
-  ssh_bind_options_set(bind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &log_level);
+  if(
+    ssh_bind_options_set(bind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &log_level)
+    || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDADDR, BINDADDR)
+    || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDPORT_STR, BINDPORT)
+    || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_RSAKEY,   KEYS_FOLDER "rsa-key")
+    || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_ECDSAKEY, KEYS_FOLDER "ecdsa-key")
+    || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BANNER, "Welcome to spaceGame")
+  ) {
+    printf("ssh_daemon had an issue setting the configuration preferences\n");
+    return;
+  }
 
   if(ssh_bind_listen(bind) < 0) {
       printf("Fatal. Unable to start the spaceGame server. Error: ");
@@ -168,29 +171,30 @@ void ssh_daemon(void) {
   };
 
   for(;;) {
-    ssh_client_t * slot = get_available_ssh_client_slot(ssh_db);
+    ssh_client_t * ssh_client = get_available_ssh_client_slot(ssh_db);
 
-    if(!slot) {
+    if(!ssh_client) {
       printf("no ssh_clients available to connect to, try again later\n");
       nanosleep(&retry_after_ts, NULL);
       continue;
     }
 
-    slot->session = ssh_new();
-    if (!slot->session) {
-      printf("[ssh_client %u]: Failed to allocate session\n", slot->id);
+    ssh_client->session = ssh_new();
+    if (!ssh_client->session) {
+      printf("[ssh_client %u]: Failed to allocate session\n", ssh_client->id);
       continue;
     }
 
 
-    if(ssh_bind_accept(bind, slot->session) != SSH_ERROR) {
-      atomic_store(slot->active, 1);
-      printf("[ssh_client %u]: Spawning\n", slot->id);
+    if(ssh_bind_accept(bind, ssh_client->session) != SSH_ERROR) {
+      atomic_store(ssh_client->active, true);
+      printf("[ssh_client %u]: Spawning\n", ssh_client->id);
       if(!fork()) {
         //child
         ssh_bind_free(bind);
-
-        exit(ssh_client_task(slot));
+        exit(
+          ssh_client_task(ssh_client)
+        );
       }
     }
   }
