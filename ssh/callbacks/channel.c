@@ -5,6 +5,8 @@
 #include "channel.h"
 #include "../ssh_client.h"
 
+#include "../../render/render_daemon.h"
+
 // ssh_channel_data_callback
 /**
  * @brief SSH channel data callback. Called when data is available on a channel
@@ -139,6 +141,8 @@ int channel_pty_request_callback(ssh_session session, ssh_channel channel, const
   printf("\t[ssh_client %u]: pxheight: %d\n", ssh_client->id, pxheight);
 
   printf("\t[ssh_client %u]: pty request successful.\n", ssh_client->id);
+
+  render_daemon(width, height);
 
   return 0;
 }

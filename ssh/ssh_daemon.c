@@ -6,9 +6,11 @@
 
 #include <libssh/server.h>
 
-#include "ssh_daemon.h"
 #include "callbacks/session.h"
 #include "callbacks/channel.h"
+
+#include "ssh_daemon.h"
+#include "../render/render_daemon.h"
 
 static
 ssh_client_t * get_available_ssh_client_slot(ssh_db_t * ssh_db) {
@@ -56,6 +58,9 @@ void reset_ssh_client(ssh_client_t * ssh_client) {
     ssh_event_free(ssh_client->event);
     ssh_client->event = NULL;
   }
+
+  printf("[ssh_client %u]: reset: renderer\n", ssh_client->id);
+  end_render_daemon();
 
   printf("[ssh_client %u]: reset: active\n", ssh_client->id);
   atomic_store(ssh_client->active, false);
