@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <signal.h>
 #include <sys/mman.h>
 #include <time.h>
 
@@ -13,9 +12,17 @@
 
 static
 ssh_client_t * get_available_ssh_client_slot(ssh_db_t * ssh_db) {
-  for(size_t i = 0; i < MAX_CLIENTS; i++) {
+  for(unsigned int i = 0; i < MAX_CLIENTS; i++) {
     if (atomic_load(ssh_db->active + i) == false) {
-      //COULD ADD PID FIELD AND WAITPID ON IT
+      if(ssh_db->slots[i].pid) {
+        int status;
+        waitpid(ssh_db->slots[i].pid, &status, 0);
+        if(WIFEXITED(status)) {
+          printf("[ssh_server]: ssh_client %u exited with %s\n", i, WEXITSTATUS(status) == EXIT_SUCCESS ? "SUCCESS" : "FAILURE");
+        } else {
+          printf("[ssh_server]: Warning. ssh_client %u terminated outside of a normal exit route.\n", i);
+        }
+      }
       return ssh_db->slots + i;
     }
   }
@@ -99,7 +106,7 @@ int ssh_client_task(ssh_client_t * ssh_client) {
 }
 
 void ssh_daemon(void) {
-  signal(SIGCHLD, SIG_IGN);
+  // signal(SIGCHLD, SIG_IGN);
 
   ssh_db_t * ssh_db = (ssh_db_t *) mmap(NULL, sizeof(ssh_db_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
@@ -107,6 +114,7 @@ void ssh_daemon(void) {
     ssh_client_t * this_slot = ssh_db->slots + i;
     *this_slot = (ssh_client_t) {
       .id = i,
+      .pid = 0,
       .active = ssh_db->active + i,
       .pleaseKill = false,
 
@@ -189,12 +197,15 @@ void ssh_daemon(void) {
     if(ssh_bind_accept(bind, ssh_client->session) != SSH_ERROR) {
       atomic_store(ssh_client->active, true);
       printf("[ssh_client %u]: Spawning\n", ssh_client->id);
-      if(!fork()) {
+      int pid = fork();
+      if(!pid) {
         //child
         ssh_bind_free(bind);
         exit(
           ssh_client_task(ssh_client)
         );
+      } else {
+        ssh_client->pid = pid;
       }
     }
   }
