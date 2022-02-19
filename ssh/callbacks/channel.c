@@ -142,7 +142,7 @@ int channel_pty_request_callback(ssh_session session, ssh_channel channel, const
 
   printf("\t[ssh_client %u]: pty request successful.\n", ssh_client->id);
 
-  render_daemon(width, height);
+  render_daemon(width - (width % 2), height - (height % 2));
 
   return 0;
 }

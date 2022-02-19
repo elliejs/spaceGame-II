@@ -28,9 +28,22 @@ const struct timespec fps_ts = (struct timespec) {
   .tv_nsec = 1000000000L / FPS
 };
 
+static
+void enqueue_render() {
+
+}
+
+static
+void blit() {
+
+}
+
+static
 void * render_task(void * data) {
   for(;;) {
+    enqueue_render();
     nanosleep(&fps_ts, NULL);
+    blit();
   }
 }
 
