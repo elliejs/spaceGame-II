@@ -1,0 +1,50 @@
+0000000100007808 <_rotate>:
+   100007808:	6dbc33ed 	stp	d13, d12, [sp, #-64]!
+   10000780c:	6d012beb 	stp	d11, d10, [sp, #16]
+   100007810:	6d0223e9 	stp	d9, d8, [sp, #32]
+   100007814:	a9037bfd 	stp	x29, x30, [sp, #48]
+   100007818:	9100c3fd 	add	x29, sp, #0x30
+   10000781c:	4ea61cc8 	mov	v8.16b, v6.16b
+   100007820:	4ea51ca9 	mov	v9.16b, v5.16b
+   100007824:	4ea41c8a 	mov	v10.16b, v4.16b
+   100007828:	4ea21c4b 	mov	v11.16b, v2.16b
+   10000782c:	4ea11c2c 	mov	v12.16b, v1.16b
+   100007830:	4ea01c0d 	mov	v13.16b, v0.16b
+   100007834:	fd400ba0 	ldr	d0, [x29, #16]
+   100007838:	1e6c1001 	fmov	d1, #5.000000000000000000e-01
+   10000783c:	1e610800 	fmul	d0, d0, d1
+   100007840:	9400155d 	bl	10000cdb4 <_request_snapshot+0x4ec>
+   100007844:	1e6a0802 	fmul	d2, d0, d10
+   100007848:	1e690803 	fmul	d3, d0, d9
+   10000784c:	1e680804 	fmul	d4, d0, d8
+   100007850:	1e6d0820 	fmul	d0, d1, d13
+   100007854:	1e6c0825 	fmul	d5, d1, d12
+   100007858:	1e6b0826 	fmul	d6, d1, d11
+   10000785c:	1f4b0060 	fmadd	d0, d3, d11, d0
+   100007860:	1f4c8087 	fmsub	d7, d4, d12, d0
+   100007864:	1f4d1480 	fmadd	d0, d4, d13, d5
+   100007868:	1f4b8045 	fmsub	d5, d2, d11, d0
+   10000786c:	1f4c1840 	fmadd	d0, d2, d12, d6
+   100007870:	1f4d8066 	fmsub	d6, d3, d13, d0
+   100007874:	1e6d0840 	fmul	d0, d2, d13
+   100007878:	1f4b0080 	fmadd	d0, d4, d11, d0
+   10000787c:	1f4c0060 	fmadd	d0, d3, d12, d0
+   100007880:	1e620810 	fmul	d16, d0, d2
+   100007884:	1e630811 	fmul	d17, d0, d3
+   100007888:	1e640812 	fmul	d18, d0, d4
+   10000788c:	1f4140e0 	fmadd	d0, d7, d1, d16
+   100007890:	1f4300c0 	fmadd	d0, d6, d3, d0
+   100007894:	1f4480a0 	fmsub	d0, d5, d4, d0
+   100007898:	1f4144b0 	fmadd	d16, d5, d1, d17
+   10000789c:	1f4440e4 	fmadd	d4, d7, d4, d16
+   1000078a0:	1f4290c4 	fmsub	d4, d6, d2, d4
+   1000078a4:	1f4148c1 	fmadd	d1, d6, d1, d18
+   1000078a8:	1f4204a1 	fmadd	d1, d5, d2, d1
+   1000078ac:	1f4384e2 	fmsub	d2, d7, d3, d1
+   1000078b0:	6f00e403 	movi	v3.2d, #0x0
+   1000078b4:	4ea41c81 	mov	v1.16b, v4.16b
+   1000078b8:	a9437bfd 	ldp	x29, x30, [sp, #48]
+   1000078bc:	6d4223e9 	ldp	d9, d8, [sp, #32]
+   1000078c0:	6d412beb 	ldp	d11, d10, [sp, #16]
+   1000078c4:	6cc433ed 	ldp	d13, d12, [sp], #64
+   1000078c8:	d65f03c0 	ret
