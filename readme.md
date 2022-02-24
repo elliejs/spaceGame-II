@@ -31,19 +31,27 @@
                                 \:\__\        \:\__\    
                                  \/__/         \/__/    
 ```
+
 ---
+
 Compile:
 ```
-gcc */*.c */*/*.c -lssh -lm -o spaceGame
+gcc */*.c */*/*.c -lssh -lm -O3 -ffast-math -o spaceGame
 ```
+
 ---
+
 Dependencies:
 - [libssh](https://www.libssh.org/)
+
 ---
+
 run the server as: `./spaceGame`
 
 run the client as: `ssh jelly@127.0.0.1 -p 2222`, password is 'toast'
+
 ---
+
 Requested Features:
 - dvorak mapping option
 - **[DONE]** ~~script for server owners to generate required keys~~
