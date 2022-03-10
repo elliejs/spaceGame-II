@@ -11,6 +11,7 @@
 
 #include "ssh_daemon.h"
 #include "../render/render_daemon.h"
+#include "../world_db/world_db.h"
 
 static
 ssh_client_t * get_available_ssh_client_slot(ssh_db_t * ssh_db) {
@@ -39,6 +40,12 @@ void reset_ssh_client(ssh_client_t * ssh_client) {
   ssh_client->auth_attempts = false;
   ssh_client->pleaseKill = false;
 
+  printf("[ssh_client %u]: reset: renderer\n", ssh_client->id);
+  end_render_daemon();
+
+  printf("[ssh_client %u]: reset: remove player from world_db\n", ssh_client->id);
+  request_player_end(ssh_client->id);
+
   printf("[ssh_client %u]: reset: channel\n", ssh_client->id);
   if(ssh_client->channel) {
     ssh_channel_free(ssh_client->channel);
@@ -59,10 +66,7 @@ void reset_ssh_client(ssh_client_t * ssh_client) {
     ssh_client->event = NULL;
   }
 
-  printf("[ssh_client %u]: reset: renderer\n", ssh_client->id);
-  end_render_daemon();
-
-  printf("[ssh_client %u]: reset: active\n", ssh_client->id);
+  printf("[ssh_client %u]: !last! reset: active\n", ssh_client->id);
   atomic_store(ssh_client->active, false);
 
   printf("[ssh_client %u]: Completed shutdown successfully\n", ssh_client->id);

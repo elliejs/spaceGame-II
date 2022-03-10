@@ -18,4 +18,4 @@ ssh_db_t;
 
 void ssh_daemon(void);
 
-#endif
+#endif /* end of include guard: SSH_DAEMON_H */

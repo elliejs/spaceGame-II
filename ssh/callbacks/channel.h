@@ -5,4 +5,4 @@
 
 extern const struct ssh_channel_callbacks_struct channel_callbacks;
 
-#endif
+#endif  /* end of include guard: CALLBACKS_CHANNEL_H */

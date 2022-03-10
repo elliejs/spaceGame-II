@@ -5,4 +5,4 @@
 
 extern const struct ssh_server_callbacks_struct session_callbacks;
 
-#endif
+#endif /* end of include guard: CALLBACKS_SESSION_H */

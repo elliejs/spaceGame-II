@@ -28,4 +28,4 @@ struct ssh_client_s {
 }
 ssh_client_t;
 
-#endif
+#endif /* end of include guard: SSH_CLIENT_H */

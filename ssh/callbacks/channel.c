@@ -5,6 +5,7 @@
 #include "channel.h"
 #include "../ssh_client.h"
 
+#include "../../world_db/world_db.h"
 #include "../../render/render_daemon.h"
 
 // ssh_channel_data_callback
@@ -142,7 +143,8 @@ int channel_pty_request_callback(ssh_session session, ssh_channel channel, const
 
   printf("\t[ssh_client %u]: pty request successful.\n", ssh_client->id);
 
-  render_daemon(width - (width % 2), height - (height % 2));
+  request_player(ssh_client->id);
+  render_daemon(width, height, 256, channel, ssh_client->id);
 
   return 0;
 }

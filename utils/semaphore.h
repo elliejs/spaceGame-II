@@ -1,6 +1,9 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
+#include <sys/sem.h>
+#include <pthread.h>
+
 //unless you're apple
 #if !defined(__APPLE__)
 //The calling program must define this union as follows:
@@ -22,4 +25,8 @@ union semun {
 #define SEM_SETVAL(S, N, V)   { union semun setval = {.val = (V)}; semctl((S), (N), SETVAL, setval); }
 #define SEM_DESTROY(S)        semctl((S), 0, IPC_RMID)
 
-#endif
+#define MTX_INIT(X) pthread_mutex_init(&(X), NULL)
+#define MTX_LOCK(X) pthread_mutex_lock(&(X))
+#define MTX_UNLOCK(X) pthread_mutex_unlock(&(X))
+#define MTX_DESTROY(X) pthread_mutex_destroy(&(X))
+#endif /* end of include guard: SEMAPHORE_H */
