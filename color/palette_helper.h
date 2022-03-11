@@ -35,7 +35,7 @@ SGVecOKLAB_t normalize_SGVecOKLAB(SGVecOKLAB_t color) {
 inline
 bool install_color(oklab_t color, unsigned int max_colors, oklab_t * color_storage, unsigned int * num_colors) {
   if(*num_colors >= max_colors) return false;
-  color_storage[*num_colors++] = color;
+  color_storage[(*num_colors)++] = color;
   return true;
 }
 
