@@ -148,7 +148,7 @@ world_snapshot_t request_snapshot(unsigned int id) {
   snapshot.chunks[0]->objects[1] = create_planet((SGVec3D_t) {
     .x = SGVec_Load_Const(0.),
     .y = SGVec_Load_Const(0.),
-    .z = SGVec_Load_Const(40.)
+    .z = SGVec_Load_Const(10.)
   });
   snapshot.chunks[0]->lights[0] = snapshot.chunks[0]->objects + 2;
   snapshot.chunks[0]->objects[2] = create_star((SGVec3D_t) {
