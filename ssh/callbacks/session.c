@@ -88,6 +88,12 @@ int auth_password_callback(ssh_session session, const char *user, const char *pa
 int auth_pubkey_callback(ssh_session session, const char *user, struct ssh_key_struct *pubkey, char signature_state, void *userdata) {
   ssh_client_t * ssh_client = (ssh_client_t *) userdata;
   printf("[ssh_client %u]: %s\n", ssh_client->id, "auth_pubkey_callback");
+  printf("[ssh_client %u]: user: %s\n", ssh_client->id, user);
+  printf("[ssh_client %u]: signature_state: %s\n", ssh_client->id, signature_state == SSH_PUBLICKEY_STATE_NONE ? "SSH_PUBLICKEY_STATE_NONE" : (signature_state == SSH_PUBLICKEY_STATE_VALID ? "SSH_PUBLICKEY_STATE_VALID" : "BAD_KEY"));
+  // printf("\t[ssh_client %u keyinfo]: type: %s\n", ssh_client->id, pubkey->type_c);
+  // printf("\t[ssh_client %u keyinfo]:")
+  // printf("\t[ssh_client %u keyinfo]:")
+  // printf("\t[ssh_client %u keyinfo]:")
 
   return SSH_AUTH_DENIED;
 }

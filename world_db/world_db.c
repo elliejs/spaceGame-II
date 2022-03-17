@@ -30,26 +30,15 @@ void start_world_db() {
   for (int i = 0; i < MAX_CLIENTS; i++) MTX_INIT(world_db->player_mtxs[i]);
 }
 
-void point_to_chunk_id(SGVec3D_t point, unsigned int * id, SGVec3D_t * origin) {
-  SGVecUInt point_origin_x = SGVecUInt_Shift_Right(SGVecUInt_Cast_SGVec(point.x), CHUNK_POW);
-  origin->x = SGVec_Cast_SGVecUInt(point_origin_x);
-  SGVecUInt point_origin_y = SGVecUInt_Shift_Right(SGVecUInt_Cast_SGVec(point.y), CHUNK_POW);
-  origin->y = SGVec_Cast_SGVecUInt(point_origin_y);
-  SGVecUInt point_origin_z = SGVecUInt_Shift_Right(SGVecUInt_Cast_SGVec(point.z), CHUNK_POW);
-  origin->z = SGVec_Cast_SGVecUInt(point_origin_z);
+void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin) {
+  unsigned int point_origin_x = (int) roundf(point.x) >> CHUNK_POW;
+  origin->x = (float) point_origin_x;
+  unsigned int point_origin_y = (int) roundf(point.y) >> CHUNK_POW;
+  origin->y = (float) point_origin_y;
+  unsigned int point_origin_z = (int) roundf(point.z) >> CHUNK_POW;
+  origin->z = (float) point_origin_y;
 
-  *id = SGVecUInt_Get_Lane(
-    SGVecUInt_Shift_Left_Insert(
-      point_origin_x,
-      SGVecUInt_Shift_Left_Insert(
-        point_origin_y,
-        point_origin_z,
-        CHUNK_POW
-      ),
-      CHUNK_POW
-    ),
-    0
-  );
+  *id = (((point_origin_z << CHUNK_POW) | point_origin_y) << CHUNK_POW) | point_origin_x;
 }
 
 void request_player(unsigned int id) {
@@ -58,12 +47,12 @@ void request_player(unsigned int id) {
   MTX_UNLOCK(world_db->active_ids_mtx);
 
   MTX_LOCK(world_db->player_mtxs[id]);
-  world_db->players[id].self = create_ship((SGVec3D_t) {
-    .x = SGVec_Load_Const(0.),
-    .y = SGVec_Load_Const(0.),
-    .z = SGVec_Load_Const(0.)
+  world_db->players[id].self = create_ship((float3D_t) {
+    .x = 10.5,
+    .y = 10.5,
+    .z = 10.5
   });
-  point_to_chunk_id(world_db->players[id].self.origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
+  point_to_chunk_id(world_db->players[id].self.float_origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
   MTX_UNLOCK(world_db->player_mtxs[id]);
 }
 
@@ -137,25 +126,24 @@ world_snapshot_t request_snapshot(unsigned int id) {
 
   snapshot.chunks[0] = malloc(1 * sizeof(chunk_t));
   *(snapshot.chunks[0]) = (chunk_t) {
-    .num_objects = 3,
-    .objects = malloc(3 * sizeof(object_t)),
+    .num_objects = 2,
+    .objects = malloc(2 * sizeof(object_t)),
 
     .num_lights = 1,
     .lights = malloc(1 * sizeof(object_t *))
   };
 
-  snapshot.chunks[0]->objects[0] = create_null_object();
-  snapshot.chunks[0]->objects[1] = create_planet((SGVec3D_t) {
-    .x = SGVec_Load_Const(0.),
-    .y = SGVec_Load_Const(0.),
-    .z = SGVec_Load_Const(10.)
+  snapshot.chunks[0]->objects[0] = create_planet((float3D_t) {
+    .x = 0.,
+    .y = 0.,
+    .z = 0.
   });
-  snapshot.chunks[0]->lights[0] = snapshot.chunks[0]->objects + 2;
-  snapshot.chunks[0]->objects[2] = create_star((SGVec3D_t) {
-    .x = SGVec_Load_Const(10.),
-    .y = SGVec_Load_Const(10.),
-    .z = SGVec_Load_Const(0.)
+  snapshot.chunks[0]->objects[1] = create_star((float3D_t) {
+    .x = 0.5,
+    .y = 0.5,
+    .z = -1005
   });
+  snapshot.chunks[0]->lights[0] = snapshot.chunks[0]->objects + 1;
 
   return snapshot;
 }

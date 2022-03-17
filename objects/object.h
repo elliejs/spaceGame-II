@@ -8,10 +8,14 @@ typedef struct object_s object_t;
 #include "star/star.h"
 
 #include "../math/vector_3d.h"
+#include "../color/oklab.h"
 
 struct object_s {
-  SGVec (*distance)(struct object_s *, SGVec3D_t);
-  SGVec3D_t origin;
+  SGVec (*SGVec_distance)(struct object_s *, SGVec3D_t);
+  float (*float_distance)(struct object_s *, float3D_t);
+  oklab_t (*get_color)(struct object_s *, float3D_t);
+  SGVec3D_t SGVec_origin;
+  float3D_t float_origin;
 
   union {
     planet_t planet;
@@ -19,7 +23,5 @@ struct object_s {
     star_t star;
   };
 };
-
-object_t create_null_object();
 
 #endif /* end of include guard: OBJECT_H */

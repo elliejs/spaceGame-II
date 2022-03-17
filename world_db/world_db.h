@@ -53,7 +53,7 @@ struct world_db_s {
   struct {
     object_t self;
     unsigned int chunk_id;
-    SGVec3D_t chunk_origin;
+    float3D_t chunk_origin;
   } players[MAX_CLIENTS];
 }
 world_db_t;
@@ -66,4 +66,5 @@ world_snapshot_t request_snapshot(unsigned int id);
 void request_player(unsigned int id);
 void request_player_end(unsigned int id);
 
+void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin);
 #endif /* end of include guard: WORLD_DB_H */

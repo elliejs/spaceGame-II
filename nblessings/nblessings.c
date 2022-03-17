@@ -41,7 +41,7 @@ const unsigned char pixel_selector_byte[16] = {
 #define HEX2CHAR(HEX) (HEX) > 9 ? (unsigned char) A_CHAR + (HEX) - 10 : (unsigned char) ZERO_CHAR + (HEX)
 #define HEX2CHARS(HEX) HEX2CHAR((HEX >> 4) & 0x0F), HEX2CHAR(HEX & 0x0F)
 
-#define LOAD_COLOR(I, R, G, B) OSC, '4', ';', INT2CHARS(I), ';', 'r', 'g', 'b', ':', HEX2CHARS((int) round(R)), '/', HEX2CHARS((int) round(G)), '/', HEX2CHARS((int) round(B)), ST
+#define LOAD_COLOR(I, R, G, B) OSC, '4', ';', INT2CHARS(I), ';', 'r', 'g', 'b', ':', HEX2CHARS((int) roundf(R)), '/', HEX2CHARS((int) roundf(G)), '/', HEX2CHARS((int) roundf(B)), ST
 #define APPLY_FORE(I) '3', '8', ';', '5', ';', INT2CHARS(I)
 #define APPLY_BACK(I) '4', '8', ';', '5', ';', INT2CHARS(I)
 
@@ -78,6 +78,15 @@ unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned
 
   for(size_t p_i = 0; p_i < num_pixels; p_i++) {
     unsigned char p_v = pixels[p_i].shape;
+    // if (!p_v) {
+    //   memcpy(buffer + i, (unsigned char[]) {CSI, APPLY_FORE(0), 'm'}, APPLY_COLOR_SIZE);
+    //   i += APPLY_COLOR_SIZE;
+    //   buffer[i++] = ' ';
+    // } else {
+    //   memcpy(buffer + i, (unsigned char[]) {CSI, APPLY_FORE(15), 'm'}, APPLY_COLOR_SIZE);
+    //   i += APPLY_COLOR_SIZE;
+
+
     if(pixels[p_i].fore == pixels[p_i].back) {
       if (pixels[p_i].back != back_color) {
         back_color = pixels[p_i].back;
@@ -87,63 +96,63 @@ unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned
       buffer[i++] = ' ';
     } else {
 
-    if(pixels[p_i].fore != fore_color || pixels[p_i].back != back_color) {
-      memcpy(buffer + i, (unsigned char[]) {CSI}, 2);
-      i += 2;
-      bool adsfg = 0;
-      if(pixels[p_i].fore != fore_color) {
-        fore_color = pixels[p_i].fore;
-        memcpy(buffer + i, (unsigned char[]) {APPLY_FORE(fore_color)}, 8);
-        i += 8;
-        adsfg = 1;
-      }
-
-      if(pixels[p_i].back != back_color) {
-        if (adsfg) {
-          memcpy(buffer + i, (unsigned char[]) {';'}, 1);
-          i += 1;
+      if(pixels[p_i].fore != fore_color || pixels[p_i].back != back_color) {
+        memcpy(buffer + i, (unsigned char[]) {CSI}, 2);
+        i += 2;
+        bool adsfg = 0;
+        if(pixels[p_i].fore != fore_color) {
+          fore_color = pixels[p_i].fore;
+          memcpy(buffer + i, (unsigned char[]) {APPLY_FORE(fore_color)}, 8);
+          i += 8;
+          adsfg = 1;
         }
-        back_color = pixels[p_i].back;
-        memcpy(buffer + i, (unsigned char[]) {APPLY_BACK(back_color)}, 8);
-        i += 8;
+
+        if(pixels[p_i].back != back_color) {
+          if (adsfg) {
+            memcpy(buffer + i, (unsigned char[]) {';'}, 1);
+            i += 1;
+          }
+          back_color = pixels[p_i].back;
+          memcpy(buffer + i, (unsigned char[]) {APPLY_BACK(back_color)}, 8);
+          i += 8;
+        }
+        memcpy(buffer + i, (unsigned char[]) {'m'}, 1);
+        i += 1;
+
       }
-      memcpy(buffer + i, (unsigned char[]) {'m'}, 1);
-      i += 1;
 
-    }
-
-    //
-    // if (pixels[p_i].fore == fore_color) {
-    //   if(pixels[p_i].back == back_color) {
-    //
-    //   } else {
-    //     memcpy(buffer + i, (char[]) {APPLY_BACK(pixels[p_i].back)}, APPLY_COLOR_SIZE);
-    //     i += APPLY_COLOR_SIZE;
-    //     back_color = pixels[p_i].back;
-    //   }
-    // } else if (pixels[p_i].fore == back_color) {
-    //   p_v ^= 0b1111;
-    //   if(pixels[p_i].back == fore_color) {
-    //
-    //   } else {
-    //     memcpy(buffer + i, (char[]) {APPLY_FORE(pixels[p_i].back)}, APPLY_COLOR_SIZE);
-    //     i += APPLY_COLOR_SIZE;
-    //     fore_color = pixels[p_i].back;
-    //   }
-    // }
-    // else {
-      // memcpy(buffer + i, (char[]) {APPLY_FORE(pixels[p_i].fore), APPLY_BACK(pixels[p_i].back)}, 2 * APPLY_COLOR_SIZE);
-      // i += 2 * APPLY_COLOR_SIZE;
-      // back_color = pixels[p_i].back;
-      // fore_color = pixels[p_i].fore;
-    // }
+      //
+      // if (pixels[p_i].fore == fore_color) {
+      //   if(pixels[p_i].back == back_color) {
+      //
+      //   } else {
+      //     memcpy(buffer + i, (char[]) {APPLY_BACK(pixels[p_i].back)}, APPLY_COLOR_SIZE);
+      //     i += APPLY_COLOR_SIZE;
+      //     back_color = pixels[p_i].back;
+      //   }
+      // } else if (pixels[p_i].fore == back_color) {
+      //   p_v ^= 0b1111;
+      //   if(pixels[p_i].back == fore_color) {
+      //
+      //   } else {
+      //     memcpy(buffer + i, (char[]) {APPLY_FORE(pixels[p_i].back)}, APPLY_COLOR_SIZE);
+      //     i += APPLY_COLOR_SIZE;
+      //     fore_color = pixels[p_i].back;
+      //   }
+      // }
+      // else {
+        // memcpy(buffer + i, (char[]) {APPLY_FORE(pixels[p_i].fore), APPLY_BACK(pixels[p_i].back)}, 2 * APPLY_COLOR_SIZE);
+        // i += 2 * APPLY_COLOR_SIZE;
+        // back_color = pixels[p_i].back;
+        // fore_color = pixels[p_i].fore;
+      // }
 
 
-    // if(p_v == 0) {
-    //   // buffer[i++] = ' ';
-    //   memcpy(buffer + i, (char[]) {0x20, 0x00, 0x00, 0x00}, PIXEL_CHAR_SIZE);
-    //   i += PIXEL_CHAR_SIZE;
-    // } else {
+      // if(p_v == 0) {
+      //   // buffer[i++] = ' ';
+      //   memcpy(buffer + i, (char[]) {0x20, 0x00, 0x00, 0x00}, PIXEL_CHAR_SIZE);
+      //   i += PIXEL_CHAR_SIZE;
+      // } else {
       memcpy(buffer + i, (unsigned char[]) {BLOCK_CHAR_PREFIX, pixel_selector_byte[p_v]}, PIXEL_CHAR_SIZE);
       i += PIXEL_CHAR_SIZE;
     }

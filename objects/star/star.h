@@ -7,13 +7,14 @@
 
 typedef
 struct star_s {
-  SGVec radius;
+  SGVec SGVec_radius;
+  float float_radius;
   SGVecOKLAB_t (*get_lighting)(struct star_s *, SGVec distance);
 }
 star_t;
 
 #include "../object.h"
 
-object_t create_star(SGVec3D_t origin);
+object_t create_star(float3D_t origin);
 
 #endif /* end of include guard: STAR_H */

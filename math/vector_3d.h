@@ -1,6 +1,8 @@
 #ifndef VECTOR_3D_H
 #define VECTOR_3D_H
 
+#include <math.h>
+
 #include "../utils/types/simd.h"
 
 typedef
@@ -10,6 +12,15 @@ struct SGVec3D_s {
   SGVec z;
 }
 SGVec3D_t;
+
+
+typedef
+struct float3D_s {
+  float x;
+  float y;
+  float z;
+}
+float3D_t;
 
 inline
 SGVec3D_t rot_vec3d(SGVec rots_sin, SGVec rots_cos, SGVec3D_t axis, SGVec3D_t p) {
@@ -108,7 +119,7 @@ SGVec3D_t rot_vec3d(SGVec rots_sin, SGVec rots_cos, SGVec3D_t axis, SGVec3D_t p)
 }
 
 inline
-SGVec vector_distance(SGVec3D_t a, SGVec3D_t b) {
+SGVec SGVec3D_distance(SGVec3D_t a, SGVec3D_t b) {
   SGVec3D_t a2b = (SGVec3D_t) {
     .x = SGVec_Sub_SGVec(b.x, a.x),
     .y = SGVec_Sub_SGVec(b.y, a.y),
@@ -125,6 +136,15 @@ SGVec vector_distance(SGVec3D_t a, SGVec3D_t b) {
   );
 
   return SGVec_Reciprocal(SGVec_Recip_Sqrt(dist2));
+}
+
+inline
+float float3D_distance(float3D_t a, float3D_t b) {
+  float bSUBa_x = b.x - a.x;
+  float bSUBa_y = b.y - a.y;
+  float bSUBa_z = b.z - a.z;
+
+  return sqrtf(bSUBa_x * bSUBa_x + bSUBa_y * bSUBa_y + bSUBa_z * bSUBa_z);
 }
 
 #endif /* end of include guard: VECTOR_3D_H */

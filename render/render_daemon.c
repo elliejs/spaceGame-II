@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include <math.h>
+#include <limits.h>
 
 #include <libssh/server.h>
 
@@ -84,30 +85,50 @@ SGVec3D_t create_rays(orientation_t orientation, SGVec rots_sin_x, SGVec rots_co
 static
 void * pixel_task(void * nothing) {
   for (;;) {
+    // printf("a\n");
     SEM_WAIT(render_client.sem, 0);
+    // printf("b\n");
+    pthread_testcancel();
+    // printf("c\n");
 
     pixel_job_t * job = NULL;
+    // printf("d\n");
     MTX_LOCK(render_client.mtx);
+    // printf("e\n");
     job = render_client.pixel_jobs;
     render_client.pixel_jobs = render_client.pixel_jobs->next;
     MTX_UNLOCK(render_client.mtx);
+    // printf("f\n");
 
     if (!job) continue;
+    // printf("g\n");
 
     SGVec3D_t rays = create_rays(render_client.snapshot.self->ship.orientation, job->rot_x_sin, job->rot_x_cos, job->rot_y_sin, job->rot_y_cos);
 
-    raw_pixel_t raw_pixel = rays_to_pixel(rays, &(render_client.snapshot));
+    // printf("pixel [y: %.2u, x: %.2u]: fore: %u, back: %u, shape: %u\n", job->y, job->x, pixel.fore, pixel.back, pixel.shape);
 
-    render_client.framebuffer[job->y * render_client.width + job->x] = (pixel_t) {
+    raw_pixel_t raw_pixel = rays_to_pixel(rays, &(render_client.snapshot));
+    // printf("h\n");
+
+    pixel_t pixel = (pixel_t) {
       .fore = closest_color_index(raw_pixel.fore, render_client.colors, render_client.num_colors),
       .back = closest_color_index(raw_pixel.back, render_client.colors, render_client.num_colors),
       .shape = raw_pixel.shape
     };
+    // printf("i\n");
+
+
+    render_client.framebuffer[job->y * render_client.width + job->x] = pixel;
+    // printf("j\n");
 
     free(job);
+    // printf("k\n");
 
     SEM_POST(render_client.sem, 1);
+    // printf("l\n");
+
   }
+  printf("dead\n");
 }
 
 static
@@ -115,6 +136,8 @@ void enqueue_render() {
   if (render_client.pixel_jobs != NULL) {
     printf("Alert: Unfinished framebuffer? Jobs remaining\n");
   }
+
+  int post = 0;
 
   for (int y = 0; y < render_client.height; y++) {
     const float rot_y = y * render_client.rot_finder_y - render_client.half_fov_y;
@@ -127,8 +150,8 @@ void enqueue_render() {
     const float rot_y_pos_sin = sinf(rot_y_pos);
     const float rot_y_pos_cos = cosf(rot_y_pos);
 
-    const SGVec rot_y_sin = SGVec_Load_Array(((float[]) {rot_y_neg_sin, rot_y_neg_sin, rot_y_pos_sin, rot_y_pos_sin}));
-    const SGVec rot_y_cos = SGVec_Load_Array(((float[]) {rot_y_neg_cos, rot_y_neg_cos, rot_y_pos_cos, rot_y_pos_cos}));
+    const SGVec rot_y_sin = SGVec_Load_Array(((float[]) {rot_y_pos_sin, rot_y_pos_sin, rot_y_neg_sin, rot_y_neg_sin}));
+    const SGVec rot_y_cos = SGVec_Load_Array(((float[]) {rot_y_pos_cos, rot_y_pos_cos, rot_y_neg_cos, rot_y_neg_cos}));
 
     for (int x = 0; x < render_client.width; x++) {
       const float rot_x = x * render_client.rot_finder_x - render_client.half_fov_x;
@@ -162,13 +185,23 @@ void enqueue_render() {
       MTX_UNLOCK(render_client.mtx);
 
       SEM_POST(render_client.sem, 0);
+      post++;
     }
   }
+
+  printf("enqueued %d pixels\n", post);
 }
 
 static inline
 void blit() {
-  SEM_WAITVAL(render_client.sem, 1, render_client.width * render_client.height);
+  for (int i = render_client.width * render_client.height; i > 0; ) {
+    short x = i > SHRT_MAX - 1 ? SHRT_MAX - 1 : i;
+    printf("wait4 %i\n", x);
+    SEM_WAITVAL(render_client.sem, 1, x);
+    i -= x;
+  }
+  pthread_testcancel();
+  printf("SPLAT!\n");
   unsigned int len = rasterize_frame(render_client.framebuffer, render_client.width * render_client.height, render_client.stream_buffer);
   ssh_channel_write(render_client.channel, render_client.stream_buffer, len);
 }
@@ -178,8 +211,11 @@ void * render_task(void * nothing) {
   for (;;) {
     render_client.snapshot = request_snapshot(render_client.id);
     enqueue_render();
+    printf("queued\n");
     nanosleep(&fps_ts, NULL);
+    printf("shlept\n");
     blit();
+    printf("blitted\n");
     for(int i = 0; i < CUBE_NUM; i++) {
       free(render_client.snapshot.chunks[i]->objects);
       free(render_client.snapshot.chunks[i]->lights);
@@ -221,16 +257,20 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   render_client.colors = malloc(max_colors * sizeof(oklab_t));
 
   //INSTALL COLORS HERE
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 256; i++) {
     install_color((oklab_t) {
-      .l = i * (1./ (float) 15.),
+      .l = i * (1. / (float) 255.),
       .a = 0.,
       .b = 0.
-    }, max_colors, render_client.colors, &render_client.num_colors);
+    }, max_colors, render_client.colors, &(render_client.num_colors));
   }
 
   unsigned int header_len;
   unsigned char * header_data = nblessings_header_data(render_client.colors, render_client.num_colors, &header_len);
+
+  // printf("max_colors: %u, num_colors: %u\n", max_colors, render_client.num_colors);
+  // printf("header_len: %u, header: %s\n", header_len, header_data);
+
   ssh_channel_write(render_client.channel, header_data, header_len);
 
   render_client.pixel_jobs = NULL;
@@ -248,15 +288,32 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
 void end_render_daemon() {
   if (!render_client.active) return;
 
-  pthread_cancel(render_client.pid);
+  printf("cancelling all jobs\n");
   for (int i = 0; i < NUM_THREADS; i++) pthread_cancel(render_client.pixel_worker_pids[i]);
+  SEM_POSTVAL(render_client.sem, 0, NUM_THREADS);
+  // MTX_UNLOCK(render_client.mtx);
+  for (int i = 0; i < NUM_THREADS; i++) pthread_join(render_client.pixel_worker_pids[i], NULL);
+
+  printf("cancelling main render loop\n");
+  pthread_cancel(render_client.pid);
+  SEM_POSTVAL(render_client.sem, 1, render_client.width * render_client.height);
+  // MTX_UNLOCK(render_client.mtx);
+  pthread_join(render_client.pid, NULL);
+  // while (render_client.pixel_jobs) {}
+
+  printf("destroying sem\n");
   SEM_DESTROY(render_client.sem);
+  printf("destroying mtx\n");
   MTX_DESTROY(render_client.mtx);
 
   free(render_client.colors);
   free(render_client.framebuffer);
   free(render_client.stream_buffer);
-  while(render_client.pixel_jobs) {
+
+  //TODO something is wrong here
+  //DONE
+  while (render_client.pixel_jobs != NULL) {
+    // printf("%p\n", render_client.pixel_jobs);
     pixel_job_t * job = render_client.pixel_jobs;
     render_client.pixel_jobs = job->next;
     free(job);

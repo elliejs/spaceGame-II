@@ -19,18 +19,18 @@ unsigned int closest_color_index(oklab_t color, oklab_t * colors, unsigned int n
   return color_index;
 }
 
-inline
-SGVecOKLAB_t normalize_SGVecOKLAB(SGVecOKLAB_t color) {
-  SGVec ab_max = SGVec_Maximum(SGVec_Absolute(color.a), SGVec_Absolute(color.b));
-  SGVecUInt out_of_range = SGVec_Gtr_Than(ab_max, SGVec_Load_Const(100.));
-  SGVec ab_multiplier = SGVec_Ternary(out_of_range, SGVec_Reciprocal(SGVec_Mult_Float(ab_max, 0.01)), SGVec_Load_Const(1.));
-
-  return (SGVecOKLAB_t) {
-    .l = SGVec_Clamp(color.l, 0., 1.),
-    .a = SGVec_Mult_SGVec(color.a, ab_multiplier),
-    .b = SGVec_Mult_SGVec(color.b, ab_multiplier)
-  };
-}
+// inline
+// SGVecOKLAB_t normalize_SGVecOKLAB(SGVecOKLAB_t color) {
+//   SGVec ab_max = SGVec_Maximum(SGVec_Absolute(color.a), SGVec_Absolute(color.b));
+//   SGVecUInt out_of_range = SGVec_Gtr_Than(ab_max, SGVec_Load_Const(100.));
+//   SGVec ab_multiplier = SGVec_Ternary(out_of_range, SGVec_Reciprocal(SGVec_Mult_Float(ab_max, 0.01)), SGVec_Load_Const(1.));
+//
+//   return (SGVecOKLAB_t) {
+//     .l = SGVec_Clamp(color.l, 0., 1.),
+//     .a = SGVec_Mult_SGVec(color.a, ab_multiplier),
+//     .b = SGVec_Mult_SGVec(color.b, ab_multiplier)
+//   };
+// }
 
 inline
 bool install_color(oklab_t color, unsigned int max_colors, oklab_t * color_storage, unsigned int * num_colors) {

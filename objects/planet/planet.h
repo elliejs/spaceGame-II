@@ -5,12 +5,13 @@
 
 typedef
 struct planet_s {
-  SGVec radius;
+  SGVec SGVec_radius;
+  float float_radius;
 }
 planet_t;
 
 #include "../object.h"
 
-object_t create_planet(SGVec3D_t origin);
+object_t create_planet(float3D_t origin);
 
 #endif /* end of include guard: PLANET_H */

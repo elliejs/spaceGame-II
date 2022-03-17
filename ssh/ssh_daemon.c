@@ -37,7 +37,7 @@ void reset_ssh_client(ssh_client_t * ssh_client) {
   printf("[ssh_client %u]: reset: params\n", ssh_client->id);
   ssh_client->pre_channel = true;
   ssh_client->authenticated = false;
-  ssh_client->auth_attempts = false;
+  ssh_client->auth_attempts = 0;
   ssh_client->pleaseKill = false;
 
   printf("[ssh_client %u]: reset: renderer\n", ssh_client->id);

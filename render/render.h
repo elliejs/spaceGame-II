@@ -9,7 +9,7 @@ typedef
 struct raw_pixel_s {
   oklab_t fore;
   oklab_t back;
-  unsigned int shape;
+  unsigned char shape;
 }
 raw_pixel_t;
 
