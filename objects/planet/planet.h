@@ -12,6 +12,6 @@ planet_t;
 
 #include "../object.h"
 
-object_t create_planet(float3D_t origin);
+object_t create_planet(float3D_t origin, float radius);
 
 #endif /* end of include guard: PLANET_H */

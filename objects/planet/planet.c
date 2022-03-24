@@ -24,7 +24,7 @@ oklab_t get_color(object_t * self, float3D_t point) {
   return (oklab_t) {0.2, 0., 0.}; //linear_srgb_to_oklab((rgb_t) {0., 1., 0.});
 }
 
-object_t create_planet(float3D_t origin) {
+object_t create_planet(float3D_t origin, float radius) {
   return (object_t) {
     .float_origin = origin,
     .SGVec_origin = (SGVec3D_t) {
@@ -36,8 +36,8 @@ object_t create_planet(float3D_t origin) {
     .float_normal = float_normal,
     .get_color = get_color,
     .planet = (planet_t) {
-      .SGVec_radius = SGVec_Load_Const(5.),
-      .float_radius = 5.
+      .SGVec_radius = SGVec_Load_Const(radius),
+      .float_radius = radius
     }
   };
 }

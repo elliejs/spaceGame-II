@@ -36,7 +36,7 @@ SGVecOKLAB_t get_lighting(star_t * self, SGVec dists) {
   };
 }
 
-object_t create_star(float3D_t origin) {
+object_t create_star(float3D_t origin, float radius) {
   return (object_t) {
     .float_origin = origin,
     .SGVec_origin = (SGVec3D_t) {
@@ -48,8 +48,8 @@ object_t create_star(float3D_t origin) {
     .float_normal = float_normal,
     .get_color = get_color,
     .star = (star_t) {
-      .SGVec_radius = SGVec_Load_Const(5.),
-      .float_radius = 5.,
+      .SGVec_radius = SGVec_Load_Const(radius),
+      .float_radius = radius,
       .get_lighting = get_lighting
     }
   };

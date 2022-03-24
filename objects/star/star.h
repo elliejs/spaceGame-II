@@ -15,6 +15,6 @@ star_t;
 
 #include "../object.h"
 
-object_t create_star(float3D_t origin);
+object_t create_star(float3D_t origin, float radius);
 
 #endif /* end of include guard: STAR_H */
