@@ -48,9 +48,9 @@ void request_player(unsigned int id) {
 
   MTX_LOCK(world_db->player_mtxs[id]);
   world_db->players[id].self = create_ship((float3D_t) {
-    .x = 10.5,
-    .y = 10.5,
-    .z = 10.5
+    .x = 20.,
+    .y = 20.,
+    .z = 20.
   });
   point_to_chunk_id(world_db->players[id].self.float_origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
   MTX_UNLOCK(world_db->player_mtxs[id]);
@@ -134,38 +134,50 @@ world_snapshot_t request_snapshot(unsigned int id) {
   };
 
   snapshot.chunks[0]->objects[0] = create_planet((float3D_t) {
-    .x = 0.,
-    .y = 0.,
-    .z = 0.
+    .x = 20.,
+    .y = 20.,
+    .z = 30.
   });
   snapshot.chunks[0]->objects[1] = create_star((float3D_t) {
-    .x = 0.5,
-    .y = 0.5,
-    .z = -1005
+    .x = 50,
+    .y = 50,
+    .z = 20
   });
   snapshot.chunks[0]->lights[0] = snapshot.chunks[0]->objects + 1;
 
   return snapshot;
 }
 
-// void request_thrust(unsigned int id) {
-//   MTX_LOCK(world_db->player_mtxs[id]);
-//   world_db->players[id].self ...
-//   point_to_chunk_id(world_db->players[id].self->origin, &world_db->players[id].chunk_id, &world_db->players[id].chunk_origin);
-//   MTX_UNLOCK(world_db->player_mtxs[id]);
-// }
-// void request_yaw(unsigned int id) {
-//   MTX_LOCK(world_db->player_mtxs[id]);
-//   world_db->players[id].self ...
-//   MTX_UNLOCK(world_db->player_mtxs[id]);
-// }
-// void request_pitch(unsigned int id) {
-//   MTX_LOCK(world_db->player_mtxs[id]);
-//   world_db->players[id].self ...
-//   MTX_UNLOCK(world_db->player_mtxs[id]);
-// }
-// void request_roll(unsigned int id) {
-//   MTX_LOCK(world_db->player_mtxs[id]);
-//   world_db->players[id].self ...
-//   MTX_UNLOCK(world_db->player_mtxs[id]);
-// }
+void request_thrust(unsigned int id, float amt) {
+  MTX_LOCK(world_db->player_mtxs[id]);
+  world_db->players[id].self.SGVec_origin = (SGVec3D_t) {
+    .x = SGVec_Add_Mult_SGVec(world_db->players[id].self.SGVec_origin.x, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.x),
+    .y = SGVec_Add_Mult_SGVec(world_db->players[id].self.SGVec_origin.y, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.y),
+    .z = SGVec_Add_Mult_SGVec(world_db->players[id].self.SGVec_origin.z, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.z)
+  };
+  world_db->players[id].self.float_origin = (float3D_t) {
+    .x = world_db->players[id].self.float_origin.x + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.x, 0)),
+    .y = world_db->players[id].self.float_origin.y + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.y, 0)),
+    .z = world_db->players[id].self.float_origin.z + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.z, 0))
+  };
+  point_to_chunk_id(world_db->players[id].self.float_origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
+  MTX_UNLOCK(world_db->player_mtxs[id]);
+}
+void request_yaw(unsigned int id, float amt) {
+  SGVec amt_cos = SGVec_Load_Const(cosf(amt));
+  SGVec amt_sin = SGVec_Load_Const(sinf(amt));
+  MTX_LOCK(world_db->player_mtxs[id]);
+  world_db->players[id].self.ship.orientation.forward = rot_vec3d(amt_sin, amt_cos, world_db->players[id].self.ship.orientation.up, world_db->players[id].self.ship.orientation.forward);
+  world_db->players[id].self.ship.orientation.right   = rot_vec3d(amt_sin, amt_cos, world_db->players[id].self.ship.orientation.up, world_db->players[id].self.ship.orientation.right);
+  MTX_UNLOCK(world_db->player_mtxs[id]);
+}
+void request_pitch(unsigned int id, float amt) {
+  MTX_LOCK(world_db->player_mtxs[id]);
+  // world_db->players[id].self ...
+  MTX_UNLOCK(world_db->player_mtxs[id]);
+}
+void request_roll(unsigned int id, float amt) {
+  MTX_LOCK(world_db->player_mtxs[id]);
+  // world_db->players[id].self ...
+  MTX_UNLOCK(world_db->player_mtxs[id]);
+}

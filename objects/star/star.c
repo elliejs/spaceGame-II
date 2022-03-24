@@ -1,13 +1,17 @@
 #include "star.h"
 
 static
-SGVec SGVec_distance(object_t * self, SGVec3D_t point) {
-  return SGVec_Sub_SGVec(SGVec3D_distance(self->SGVec_origin, point), self->star.SGVec_radius);
+float3D_t float_normal(object_t * self, float3D_t point) {
+  return float_normalize((float3D_t) {
+    .x = point.x - self->float_origin.x,
+    .y = point.y - self->float_origin.y,
+    .z = point.z - self->float_origin.z
+  });
 }
 
 static
-float float_distance(object_t * self, float3D_t point) {
-  return float3D_distance(self->float_origin, point) - self->star.float_radius;
+SGVec SGVec_distance(object_t * self, SGVec3D_t point) {
+  return SGVec_Sub_SGVec(SGVec3D_distance(self->SGVec_origin, point), self->star.SGVec_radius);
 }
 
 static
@@ -41,11 +45,11 @@ object_t create_star(float3D_t origin) {
       .z = SGVec_Load_Const(origin.z)
     },
     .SGVec_distance = SGVec_distance,
-    .float_distance = float_distance,
+    .float_normal = float_normal,
     .get_color = get_color,
     .star = (star_t) {
-      .SGVec_radius = SGVec_Load_Const(50.),
-      .float_radius = 50.,
+      .SGVec_radius = SGVec_Load_Const(5.),
+      .float_radius = 5.,
       .get_lighting = get_lighting
     }
   };

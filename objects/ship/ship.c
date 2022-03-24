@@ -1,13 +1,17 @@
 #include "ship.h"
 
 static
-SGVec SGVec_distance(object_t * self, SGVec3D_t point) {
-  return SGVec_Sub_SGVec(SGVec3D_distance(self->SGVec_origin, point), self->ship.SGVec_radius);
+float3D_t float_normal(object_t * self, float3D_t point) {
+  return float_normalize((float3D_t) {
+    .x = point.x - self->float_origin.x,
+    .y = point.y - self->float_origin.y,
+    .z = point.z - self->float_origin.z
+  });
 }
 
 static
-float float_distance(object_t * self, float3D_t point) {
-  return float3D_distance(self->float_origin, point) - self->ship.float_radius;
+SGVec SGVec_distance(object_t * self, SGVec3D_t point) {
+  return SGVec_Sub_SGVec(SGVec3D_distance(self->SGVec_origin, point), self->ship.SGVec_radius);
 }
 
 static
@@ -27,7 +31,7 @@ object_t create_ship(float3D_t origin) {
       .z = SGVec_Load_Const(origin.z)
     },
     .SGVec_distance = SGVec_distance,
-    .float_distance = float_distance,
+    .float_normal = float_normal,
     .get_color = get_color,
     .ship = (ship_t) {
       .orientation = (orientation_t) {

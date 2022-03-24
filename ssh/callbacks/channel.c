@@ -42,6 +42,37 @@ int channel_data_callback(ssh_session session, ssh_channel channel, void *data, 
     case 0x1b:  //ESC
       ssh_client->pleaseKill = true;
       break;
+    case 0x77: //w
+      request_thrust(ssh_client->id, 0.2);
+      break;
+
+    case 0x73: //s
+      request_thrust(ssh_client->id, -0.2);
+      break;
+
+    case 0x64: //d
+      request_roll(ssh_client->id, -0.1);
+      break;
+
+    case 0x61: //a
+      request_roll(ssh_client->id, 0.1);
+      break;
+
+    case 0x41: //up-arrow
+      request_pitch(ssh_client->id, -0.1);
+      break;
+
+    case 0x42: //down-arrow
+      request_pitch(ssh_client->id, 0.1);
+      break;
+
+    case 0x44: //left-arrow
+      request_yaw(ssh_client->id, -0.1);
+      break;
+
+    case 0x43: //right-arrow
+      request_yaw(ssh_client->id, 0.1);
+      break;
   }
 
   return (int) len;

@@ -67,4 +67,10 @@ void request_player(unsigned int id);
 void request_player_end(unsigned int id);
 
 void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin);
+
+void request_thrust(unsigned int id, float amt);
+void request_yaw(unsigned int id, float amt);
+void request_pitch(unsigned int id, float amt);
+void request_roll(unsigned int id, float amt);
+
 #endif /* end of include guard: WORLD_DB_H */

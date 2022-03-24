@@ -32,6 +32,7 @@
 #   define SGVec_Gtr_Than(X, Y)                 vcgtq_f32((X), (Y))
 #   define SGVecUInt_Or(X, Y)                   vorrq_u32((X), (Y))
 #   define SGVecUInt_And(X, Y)                  vandq_u32((X), (Y))
+#   define SGVecUInt_Xor(X, Y)                  veorq_u32((X), (Y))
 #   define SGVecUInt_Not(X)                     vmvnq_u32((X))
 #   define SGVecUInt_Ternary(X, Y, Z)           vbslq_u32((X), (Y), (Z))
 #   define SGVec_Ternary(X, Y, Z)               vbslq_f32((X), (Y), (Z))

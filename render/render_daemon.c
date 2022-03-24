@@ -189,19 +189,19 @@ void enqueue_render() {
     }
   }
 
-  printf("enqueued %d pixels\n", post);
+  // printf("enqueued %d pixels\n", post);
 }
 
 static inline
 void blit() {
   for (int i = render_client.width * render_client.height; i > 0; ) {
     short x = i > SHRT_MAX - 1 ? SHRT_MAX - 1 : i;
-    printf("wait4 %i\n", x);
+    // printf("wait4 %i\n", x);
     SEM_WAITVAL(render_client.sem, 1, x);
     i -= x;
   }
   pthread_testcancel();
-  printf("SPLAT!\n");
+  // printf("SPLAT!\n");
   unsigned int len = rasterize_frame(render_client.framebuffer, render_client.width * render_client.height, render_client.stream_buffer);
   ssh_channel_write(render_client.channel, render_client.stream_buffer, len);
 }
@@ -211,11 +211,11 @@ void * render_task(void * nothing) {
   for (;;) {
     render_client.snapshot = request_snapshot(render_client.id);
     enqueue_render();
-    printf("queued\n");
+    // printf("queued\n");
     nanosleep(&fps_ts, NULL);
-    printf("shlept\n");
+    // printf("shlept\n");
     blit();
-    printf("blitted\n");
+    // printf("blitted\n");
     for(int i = 0; i < CUBE_NUM; i++) {
       free(render_client.snapshot.chunks[i]->objects);
       free(render_client.snapshot.chunks[i]->lights);
