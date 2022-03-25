@@ -2,6 +2,8 @@
 #define OKLAB_H
 
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "../utils/types/simd.h"
 
 // OKLAB formulas opensource under MIT license
@@ -67,10 +69,20 @@ rgb_t clamp_denormalize_rgb(rgb_t rgb) {
 
 inline
 rgb_t scale_denormalize_rgb(rgb_t rgb) {
+  float min_rgb = fmin(rgb.r, fmin(rgb.g, rgb.b));
+  if (min_rgb < 0.) {
+    rgb.r -= min_rgb;
+    rgb.g -= min_rgb;
+    rgb.b -= min_rgb;
+  }
+
   float max_rgb = fmax(rgb.r, fmax(rgb.g, rgb.b));
-  rgb.r /= max_rgb;
-  rgb.g /= max_rgb;
-  rgb.b /= max_rgb;
+  if(max_rgb > 1.) {
+    rgb.r /= max_rgb;
+    rgb.g /= max_rgb;
+    rgb.b /= max_rgb;
+  }
+
   return (rgb_t) {
     .r = fmin(fmax(rgb.r * (float) 255., 0.), 255.),
     .g = fmin(fmax(rgb.g * (float) 255., 0.), 255.),

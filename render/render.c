@@ -6,7 +6,7 @@
 #include "../color/palette_helper.h"
 
 #define STEP_MAX 1000
-#define HIT_DIST 0.001
+#define HIT_DIST 0.0001
 #define MAX_DIST 2.0 * CHUNK_SIZE
 
 typedef
@@ -36,7 +36,7 @@ march_result_t ray_march(SGVec3D_t origin, SGVec3D_t rays, world_snapshot_t * sn
         SGVec dist_candidate = o->SGVec_distance(o, point);
         dist_step = SGVec_Minimum(dist_candidate, dist_step);
 
-        SGVecUInt dist_ternary = SGVec_Less_Than(dist_candidate, dist_step);
+        SGVecUInt dist_ternary = SGVec_Less_Or_Eq_Than(dist_candidate, dist_step);
         obj_idx = SGVecUInt_Ternary(dist_ternary, SGVecUInt_Load_Const(j), obj_idx);
         chunk_idx = SGVecUInt_Ternary(dist_ternary, SGVecUInt_Load_Const(c), chunk_idx);
 
@@ -141,6 +141,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
       float3D_t point = (float3D_t) {point_x[i], point_y[i], point_z[i]};
       object_t * o = snapshot->chunks[chunk_idx[i]]->objects + obj_idx[i];
       oklab_t lab = o->get_color(o, point);
+      printf("obj[%d %d] color: %f %f %f\n", chunk_idx[i], obj_idx[i], lab.l, lab.a, lab.b);
       l_arr[i] = lab.l;
       a_arr[i] = lab.a;
       b_arr[i] = lab.b;
@@ -164,9 +165,9 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
     .z = SGVec_Load_Array(normal_arr_z)
   };
 
-  march_result.point.x = SGVec_Add_SGVec(march_result.point.x, SGVec_Mult_Float(normals.x, 0.5));
-  march_result.point.y = SGVec_Add_SGVec(march_result.point.y, SGVec_Mult_Float(normals.y, 0.5));
-  march_result.point.z = SGVec_Add_SGVec(march_result.point.z, SGVec_Mult_Float(normals.z, 0.5));
+  march_result.point.x = SGVec_Add_SGVec(march_result.point.x, SGVec_Mult_Float(normals.x, 4 * HIT_DIST));
+  march_result.point.y = SGVec_Add_SGVec(march_result.point.y, SGVec_Mult_Float(normals.y, 4 * HIT_DIST));
+  march_result.point.z = SGVec_Add_SGVec(march_result.point.z, SGVec_Mult_Float(normals.z, 4 * HIT_DIST));
 
   // printf("normals: x0 x1 x2 x3: %f %f %f %f\nnormals: y0 y1 y2 y3: %f %f %f %f\nnormals: z0 z1 z2 z3: %f %f %f %f\n", normal_arr_x[0], normal_arr_x[1], normal_arr_x[2], normal_arr_x[3], normal_arr_y[0], normal_arr_y[1], normal_arr_y[2], normal_arr_y[3], normal_arr_z[0], normal_arr_z[1], normal_arr_z[2], normal_arr_z[3]);
   // SGVec3D_t normals = (SGVec3D_t) {
@@ -225,7 +226,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
                 dists,
                 light_march.dists
               ),
-              SGVec_Load_Const(4 * HIT_DIST)
+              SGVec_Load_Const(60 * HIT_DIST)
             ),
             valid_aligned
           );
@@ -248,7 +249,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   float color_a[4];  SGVec_Store_Array(color_a, color.a);
   float color_b[4];  SGVec_Store_Array(color_b, color.b);
 
-  unsigned char shape = 0x00;
+  unsigned char shape = 0;
   oklab_t fore = OKLAB_BLACK;
   oklab_t back = OKLAB_BLACK;
 

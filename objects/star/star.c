@@ -17,7 +17,7 @@ SGVec SGVec_distance(object_t * self, SGVec3D_t point) {
 static
 oklab_t get_color(object_t * self, float3D_t point) {
   return (oklab_t) {
-    .l = 2.0,
+    .l = 10.0,
     .a = 0.,
     .b = 0.
   };

@@ -265,7 +265,7 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   for (int j = -7; j < 8; j++) {
     for (int k = -7; k < 8; k++) {
       install_color((oklab_t) {
-        .l = 5.,
+        .l = 2.,
         .a = j * (1. / (float) 7.),
         .b = k * (1. / (float) 7.)
       }, max_colors, render_client.colors, &(render_client.num_colors));
