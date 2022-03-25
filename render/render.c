@@ -6,7 +6,7 @@
 #include "../color/palette_helper.h"
 
 #define STEP_MAX 1000
-#define HIT_DIST 0.1
+#define HIT_DIST 0.001
 #define MAX_DIST 2.0 * CHUNK_SIZE
 
 typedef
@@ -178,6 +178,13 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   for(int c = 0; c < CUBE_NUM; c++) {
     for(int l = 0; l < snapshot->chunks[c]->num_lights; l++) {
       object_t * light = snapshot->chunks[c]->lights[l];
+      SGVecUInt light_isNOT_self = SGVecUInt_Load_Array(((uint32_t []) {
+        (light == snapshot->chunks[chunk_idx[0]]->objects + obj_idx[0]) ? 0 : ~0,
+        (light == snapshot->chunks[chunk_idx[1]]->objects + obj_idx[1]) ? 0 : ~0,
+        (light == snapshot->chunks[chunk_idx[2]]->objects + obj_idx[2]) ? 0 : ~0,
+        (light == snapshot->chunks[chunk_idx[3]]->objects + obj_idx[3]) ? 0 : ~0
+      }));
+
       SGVec3D_t ray_to_light = SGVec3D_normalize((SGVec3D_t) {
         .x = SGVec_Sub_SGVec(light->SGVec_origin.x, march_result.point.x),
         .y = SGVec_Sub_SGVec(light->SGVec_origin.y, march_result.point.y),
@@ -197,7 +204,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
       // printf("alignment: %f %f %f %f\n", SGVec_Get_Lane(alignment, 0), SGVec_Get_Lane(alignment, 1), SGVec_Get_Lane(alignment, 2), SGVec_Get_Lane(alignment, 3));
       SGVecUInt aligned = SGVec_Gtr_Than(alignment, SGVec_ZERO);
       // printf("aligned: %x %x %x %x\n", SGVecUInt_Get_Lane(aligned, 0), SGVecUInt_Get_Lane(aligned, 1), SGVecUInt_Get_Lane(aligned, 2), SGVecUInt_Get_Lane(aligned, 3));
-      SGVecUInt valid_aligned = SGVecUInt_And(aligned, march_result.validity);
+      SGVecUInt valid_aligned = SGVecUInt_And(SGVecUInt_And(aligned, march_result.validity), light_isNOT_self);
       // printf("valid_aligned: %x %x %x %x\n", SGVecUInt_Get_Lane(valid_aligned, 0), SGVecUInt_Get_Lane(valid_aligned, 1), SGVecUInt_Get_Lane(valid_aligned, 2), SGVecUInt_Get_Lane(valid_aligned, 3));
 
       // if (lanes_false(valid_aligned)) {
@@ -211,16 +218,17 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
       SGVec dists = light->SGVec_distance(light, march_result.point);
       march_result_t light_march = ray_march(march_result.point, ray_to_light, snapshot);
       // printf("dists: %f %f %f %f\nmarch_dists: %f %f %f %f\n", SGVec_Get_Lane(dists, 0), SGVec_Get_Lane(dists, 1), SGVec_Get_Lane(dists, 2), SGVec_Get_Lane(dists, 3), SGVec_Get_Lane(light_march.dists, 0), SGVec_Get_Lane(light_march.dists, 1), SGVec_Get_Lane(light_march.dists, 2), SGVec_Get_Lane(light_march.dists, 3));
-      SGVecUInt unobstructed_rays = SGVecUInt_And(
-        SGVec_Less_Than(
-          SGVec_Sub_SGVec(
-            dists,
-            light_march.dists
-          ),
-          SGVec_Load_Const(1.)
-        ),
-        valid_aligned
-      );
+      SGVecUInt unobstructed_rays =
+          SGVecUInt_And(
+            SGVec_Less_Than(
+              SGVec_Sub_SGVec(
+                dists,
+                light_march.dists
+              ),
+              SGVec_Load_Const(4 * HIT_DIST)
+            ),
+            valid_aligned
+          );
       // if (lanes_false(unobstructed_rays)) continue;
       // if (!lanes_true(unobstructed_rays))     return RAW_PIXEL_BLACK;
       // printf("have unobstructed rays\n");

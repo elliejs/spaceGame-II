@@ -57,11 +57,24 @@ rgb_t normalize_rgb(unsigned int r, unsigned int g, unsigned int b) {
 }
 
 inline
-rgb_t denormalize_rgb(rgb_t rgb) {
+rgb_t clamp_denormalize_rgb(rgb_t rgb) {
   return (rgb_t) {
-    .r = rgb.r * (float) 255.,
-    .g = rgb.g * (float) 255.,
-    .b = rgb.b * (float) 255.
+    .r = fmin(fmax(rgb.r * (float) 255., 0.), 255.),
+    .g = fmin(fmax(rgb.g * (float) 255., 0.), 255.),
+    .b = fmin(fmax(rgb.b * (float) 255., 0.), 255.),
+  };
+}
+
+inline
+rgb_t scale_denormalize_rgb(rgb_t rgb) {
+  float max_rgb = fmax(rgb.r, fmax(rgb.g, rgb.b));
+  rgb.r /= max_rgb;
+  rgb.g /= max_rgb;
+  rgb.b /= max_rgb;
+  return (rgb_t) {
+    .r = fmin(fmax(rgb.r * (float) 255., 0.), 255.),
+    .g = fmin(fmax(rgb.g * (float) 255., 0.), 255.),
+    .b = fmin(fmax(rgb.b * (float) 255., 0.), 255.),
   };
 }
 

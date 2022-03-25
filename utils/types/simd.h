@@ -16,6 +16,7 @@
 #   define SGVec_Store_Array(X, Y)              vst1q_f32((X), (Y))
 #   define SGVec_Load_Const(X)                  vdupq_n_f32((X))
 #   define SGVecUInt_Load_Const(X)              vdupq_n_u32((X))
+#   define SGVecUInt_Load_Array(X)              vld1q_u32((X))
 #   define SGVec_Negate(X)                      vnegq_f32((X))
 #   define SGVec_Mult_SGVec(X, Y)               vmulq_f32((X), (Y))
 #   define SGVec_Add_Mult_SGVec(X, Y, Z)        vmlaq_f32((X), (Y), (Z))

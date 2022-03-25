@@ -4,7 +4,10 @@ extern inline
 rgb_t normalize_rgb(unsigned int r, unsigned int g, unsigned int b);
 
 extern inline
-rgb_t denormalize_rgb(rgb_t rgb);
+rgb_t clamp_denormalize_rgb(rgb_t rgb);
+
+extern inline
+rgb_t scale_denormalize_rgb(rgb_t rgb);
 
 extern inline
 float delta_E(oklab_t x, oklab_t y);

@@ -53,7 +53,7 @@ unsigned char nblessings_header[NBLESSINGS_HEADER_SIZE] = {
 
 unsigned char * nblessings_header_data(oklab_t * colors, unsigned int num_colors, unsigned int * header_len) {
   for(size_t i = 0; i < num_colors; i++) {
-    rgb_t rgb = denormalize_rgb(oklab_to_linear_srgb(colors[i]));
+    rgb_t rgb = scale_denormalize_rgb(oklab_to_linear_srgb(colors[i]));
     memcpy(nblessings_header + START_ALTERNATE_BUFFER_SIZE + CLEAR_SCREEN_SIZE + i * LOAD_COLOR_SIZE, (unsigned char[]){LOAD_COLOR(i, rgb.r, rgb.g, rgb.b)}, LOAD_COLOR_SIZE * sizeof(unsigned char));
   }
   nblessings_header[START_ALTERNATE_BUFFER_SIZE + CLEAR_SCREEN_SIZE + num_colors * LOAD_COLOR_SIZE] = '\0';
@@ -67,7 +67,7 @@ unsigned char * nblessings_footer_data(unsigned int * footer_len) {
  return NULL;
 }
 
-unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned char * buffer) {
+unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned int width, unsigned char * buffer) {
   unsigned int i = 0;
   memcpy(buffer + i, (unsigned char[]) {CLEAR_SCREEN}, CLEAR_SCREEN_SIZE);
   i += CLEAR_SCREEN_SIZE;
@@ -156,6 +156,9 @@ unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned
       memcpy(buffer + i, (unsigned char[]) {BLOCK_CHAR_PREFIX, pixel_selector_byte[p_v]}, PIXEL_CHAR_SIZE);
       i += PIXEL_CHAR_SIZE;
     }
+    // if(!((p_i + 1) % width)) {
+    //   buffer[i++] = '\n';
+    // }
   }
   buffer[i++] = '\0';
 

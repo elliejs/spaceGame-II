@@ -202,7 +202,7 @@ void blit() {
   }
   pthread_testcancel();
   // printf("SPLAT!\n");
-  unsigned int len = rasterize_frame(render_client.framebuffer, render_client.width * render_client.height, render_client.stream_buffer);
+  unsigned int len = rasterize_frame(render_client.framebuffer, render_client.width * render_client.height, render_client.width, render_client.stream_buffer);
   ssh_channel_write(render_client.channel, render_client.stream_buffer, len);
 }
 
@@ -257,12 +257,19 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   render_client.colors = malloc(max_colors * sizeof(oklab_t));
 
   //INSTALL COLORS HERE
-  for (int i = 0; i < 256; i++) {
-    install_color((oklab_t) {
-      .l = i * (1. / (float) 255.),
-      .a = 0.,
-      .b = 0.
-    }, max_colors, render_client.colors, &(render_client.num_colors));
+  install_color((oklab_t) {
+    .l = 0.,
+    .a = 0.,
+    .b = 0.
+  }, max_colors, render_client.colors, &(render_client.num_colors));
+  for (int j = -7; j < 8; j++) {
+    for (int k = -7; k < 8; k++) {
+      install_color((oklab_t) {
+        .l = 5.,
+        .a = j * (1. / (float) 7.),
+        .b = k * (1. / (float) 7.)
+      }, max_colors, render_client.colors, &(render_client.num_colors));
+    }
   }
 
   unsigned int header_len;
