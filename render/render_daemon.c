@@ -220,6 +220,8 @@ void * render_task(void * nothing) {
       free(render_client.snapshot.chunks[i]->lights);
       free(render_client.snapshot.chunks[i]);
     }
+    free(render_client.snapshot.chunks[CUBE_NUM]->objects);
+    free(render_client.snapshot.chunks[CUBE_NUM]->lights);
   }
 }
 
@@ -302,10 +304,6 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
 void end_render_daemon() {
   if (!render_client.active) return;
 
-  for(int i = 0; i < render_client.num_colors; i++) {
-    printf("color %i, l: %f, a: %f, b: %f\n", i, render_client.colors[i].l, render_client.colors[i].a, render_client.colors[i].b);
-  }
-
   printf("cancelling all jobs\n");
   for (int i = 0; i < NUM_THREADS; i++) pthread_cancel(render_client.pixel_worker_pids[i]);
   SEM_POSTVAL(render_client.sem, 0, NUM_THREADS);
@@ -330,12 +328,12 @@ void end_render_daemon() {
 
   //TODO something is wrong here
   //DONE
-  while (render_client.pixel_jobs != NULL) {
-    // printf("%p\n", render_client.pixel_jobs);
-    pixel_job_t * job = render_client.pixel_jobs;
-    render_client.pixel_jobs = job->next;
-    free(job);
-  }
+  // while (render_client.pixel_jobs != NULL) {
+  //   printf("%p\n", render_client.pixel_jobs);
+  //   pixel_job_t * job = render_client.pixel_jobs;
+  //   render_client.pixel_jobs = job->next;
+  //   free(job);
+  // }
 
   // TODO
   // unsigned int footer_len;

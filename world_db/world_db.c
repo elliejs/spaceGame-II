@@ -88,28 +88,32 @@ bool chunk_ids_contains(unsigned int * container, unsigned int x) {
 }
 
 world_snapshot_t request_snapshot(unsigned int id) {
-  world_snapshot_t snapshot = (world_snapshot_t) {
-    .num_ships = 0
-  };
+  world_snapshot_t snapshot;
+  snapshot.chunks[CUBE_NUM] = &(snapshot.ship_chunk);
+  // snapshot.self = &(world_db->players[id].self);
+  snapshot.ship_chunk.lights = malloc(0);
+  snapshot.ship_chunk.num_lights = 0;
 
   unsigned int accept_chunk_ids[CUBE_NUM];
-
   MTX_LOCK(world_db->player_mtxs[id]);
-  snapshot.ships[snapshot.num_ships++] = world_db->players[id].self;
-  snapshot.self = snapshot.ships;
+  // snapshot.ships[snapshot.num_ships++] = world_db->players[id].self;
   gather_acceptable_chunks(world_db->players[id].chunk_id, accept_chunk_ids);
   MTX_UNLOCK(world_db->player_mtxs[id]);
 
   MTX_LOCK(world_db->active_ids_mtx);
+  snapshot.ship_chunk.objects = malloc(world_db->active_ids.num * sizeof(object_t));
+  snapshot.ship_chunk.num_objects = 0;
+
   for (int i = 0; i < world_db->active_ids.num; i++) {
     unsigned int iter_id = world_db->active_ids.data[i];
-    if (iter_id == id) continue;
-
     MTX_LOCK(world_db->player_mtxs[iter_id]);
-    if (chunk_ids_contains(accept_chunk_ids, world_db->players[iter_id].chunk_id))
-      snapshot.ships[snapshot.num_ships++] = world_db->players[iter_id].self;
+    if (chunk_ids_contains(accept_chunk_ids, world_db->players[iter_id].chunk_id)) {
+      if (iter_id == id) {
+        snapshot.self = snapshot.ship_chunk.objects + snapshot.ship_chunk.num_objects;
+      }
+      snapshot.ship_chunk.objects[snapshot.ship_chunk.num_objects++] = world_db->players[iter_id].self;
+    }
     MTX_UNLOCK(world_db->player_mtxs[iter_id]);
-
   }
   MTX_UNLOCK(world_db->active_ids_mtx);
 
