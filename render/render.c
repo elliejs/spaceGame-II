@@ -6,7 +6,7 @@
 #include "../color/palette_helper.h"
 
 #define STEP_MAX 1000
-#define HIT_DIST 0.0001
+#define HIT_DIST 0.1
 #define MAX_DIST 2.0 * CHUNK_SIZE
 
 typedef
@@ -51,7 +51,8 @@ march_result_t ray_march(SGVec3D_t origin, SGVec3D_t rays, world_snapshot_t * sn
     //   obj_idx = SGVecUInt_Ternary(dist_ternary, SGVecUInt_Load_Const(j), obj_idx);
     //   chunk_idx = SGVecUInt_Ternary(dist_ternary, SGVecUInt_Load_Const(c), chunk_idx);
     // }
-    dist_step = SGVec_Mult_Float(dist_step, 0.5);
+
+    // dist_step = SGVec_Mult_Float(dist_step, 0.5);
     dist_tot = SGVec_Add_SGVec(dist_tot, dist_step);
     point = (SGVec3D_t) {
       .x = SGVec_Add_Mult_SGVec(origin.x, rays.x, dist_tot),
@@ -66,7 +67,7 @@ march_result_t ray_march(SGVec3D_t origin, SGVec3D_t rays, world_snapshot_t * sn
   }
 
   // dist_tot = SGVec_Sub_SGVec(dist_tot, SGVec_Load_Const(3. * HIT_DIST));
-  printf("finding satisfied march took [%d] steps\n", i);
+  // printf("finding satisfied march took [%d] steps\n", i);
   return (march_result_t) {
     .dists = dist_tot,
     .obj_idx = obj_idx,
@@ -77,27 +78,6 @@ march_result_t ray_march(SGVec3D_t origin, SGVec3D_t rays, world_snapshot_t * sn
       .y = SGVec_Add_Mult_SGVec(origin.y, rays.y, dist_tot),
       .z = SGVec_Add_Mult_SGVec(origin.z, rays.z, dist_tot)
     }
-  };
-}
-
-static inline
-SGVec3D_t SGVec3D_normalize(SGVec3D_t vec) {
-  SGVec recip_magnitude =
-    SGVec_Recip_Sqrt(
-      SGVec_Add_Mult_SGVec(
-        SGVec_Add_Mult_SGVec(
-          SGVec_Mult_SGVec(vec.x, vec.x),
-          vec.y,
-          vec.y
-        ),
-        vec.z,
-        vec.z
-      )
-    );
-  return (SGVec3D_t) {
-    .x = SGVec_Mult_SGVec(vec.x, recip_magnitude),
-    .y = SGVec_Mult_SGVec(vec.y, recip_magnitude),
-    .z = SGVec_Mult_SGVec(vec.z, recip_magnitude)
   };
 }
 
@@ -141,7 +121,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
       float3D_t point = (float3D_t) {point_x[i], point_y[i], point_z[i]};
       object_t * o = snapshot->chunks[chunk_idx[i]]->objects + obj_idx[i];
       oklab_t lab = o->get_color(o, point);
-      printf("obj[%d %d] color: %f %f %f\n", chunk_idx[i], obj_idx[i], lab.l, lab.a, lab.b);
+      // printf("obj[%d %d] color: %f %f %f\n", chunk_idx[i], obj_idx[i], lab.l, lab.a, lab.b);
       l_arr[i] = lab.l;
       a_arr[i] = lab.a;
       b_arr[i] = lab.b;
@@ -165,9 +145,9 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
     .z = SGVec_Load_Array(normal_arr_z)
   };
 
-  march_result.point.x = SGVec_Add_SGVec(march_result.point.x, SGVec_Mult_Float(normals.x, 4 * HIT_DIST));
-  march_result.point.y = SGVec_Add_SGVec(march_result.point.y, SGVec_Mult_Float(normals.y, 4 * HIT_DIST));
-  march_result.point.z = SGVec_Add_SGVec(march_result.point.z, SGVec_Mult_Float(normals.z, 4 * HIT_DIST));
+  // march_result.point.x = SGVec_Add_SGVec(march_result.point.x, SGVec_Mult_Float(normals.x, 10));
+  // march_result.point.y = SGVec_Add_SGVec(march_result.point.y, SGVec_Mult_Float(normals.y, 10));
+  // march_result.point.z = SGVec_Add_SGVec(march_result.point.z, SGVec_Mult_Float(normals.z, 10));
 
   // printf("normals: x0 x1 x2 x3: %f %f %f %f\nnormals: y0 y1 y2 y3: %f %f %f %f\nnormals: z0 z1 z2 z3: %f %f %f %f\n", normal_arr_x[0], normal_arr_x[1], normal_arr_x[2], normal_arr_x[3], normal_arr_y[0], normal_arr_y[1], normal_arr_y[2], normal_arr_y[3], normal_arr_z[0], normal_arr_z[1], normal_arr_z[2], normal_arr_z[3]);
   // SGVec3D_t normals = (SGVec3D_t) {
@@ -186,11 +166,15 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
         (light == snapshot->chunks[chunk_idx[3]]->objects + obj_idx[3]) ? 0 : ~0
       }));
 
-      SGVec3D_t ray_to_light = SGVec3D_normalize((SGVec3D_t) {
+      SGVec3D_t ray_to_light =
+      SGVec3D_normalize(
+        (SGVec3D_t) {
         .x = SGVec_Sub_SGVec(light->SGVec_origin.x, march_result.point.x),
         .y = SGVec_Sub_SGVec(light->SGVec_origin.y, march_result.point.y),
         .z = SGVec_Sub_SGVec(light->SGVec_origin.z, march_result.point.z)
-      });
+      }
+    )
+    ;
       // printf("ray_to_light: x0 x1 x2 x3: %f %f %f %f\nray_to_light: y0 y1 y2 y3: %f %f %f %f\nray_to_light: z0 z1 z2 z3: %f %f %f %f\n\n", SGVec_Get_Lane(ray_to_light.x, 0), SGVec_Get_Lane(ray_to_light.x, 1), SGVec_Get_Lane(ray_to_light.x, 2), SGVec_Get_Lane(ray_to_light.x, 3), SGVec_Get_Lane(ray_to_light.y, 0), SGVec_Get_Lane(ray_to_light.y, 1), SGVec_Get_Lane(ray_to_light.y, 2), SGVec_Get_Lane(ray_to_light.y, 3), SGVec_Get_Lane(ray_to_light.z, 0), SGVec_Get_Lane(ray_to_light.z, 1), SGVec_Get_Lane(ray_to_light.z, 2), SGVec_Get_Lane(ray_to_light.z, 3));
       SGVec alignment =
       SGVec_Add_Mult_SGVec(
@@ -216,6 +200,11 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
 
       // printf("have rays\n");
       //we have some rays to bother with!
+
+      march_result.point.x = SGVec_Add_SGVec(march_result.point.x, SGVec_Mult_Float(normals.x, 2. * HIT_DIST));
+      march_result.point.y = SGVec_Add_SGVec(march_result.point.y, SGVec_Mult_Float(normals.y, 2. * HIT_DIST));
+      march_result.point.z = SGVec_Add_SGVec(march_result.point.z, SGVec_Mult_Float(normals.z, 2. * HIT_DIST));
+
       SGVec dists = light->SGVec_distance(light, march_result.point);
       march_result_t light_march = ray_march(march_result.point, ray_to_light, snapshot);
       // printf("dists: %f %f %f %f\nmarch_dists: %f %f %f %f\n", SGVec_Get_Lane(dists, 0), SGVec_Get_Lane(dists, 1), SGVec_Get_Lane(dists, 2), SGVec_Get_Lane(dists, 3), SGVec_Get_Lane(light_march.dists, 0), SGVec_Get_Lane(light_march.dists, 1), SGVec_Get_Lane(light_march.dists, 2), SGVec_Get_Lane(light_march.dists, 3));
@@ -226,7 +215,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
                 dists,
                 light_march.dists
               ),
-              SGVec_Load_Const(60 * HIT_DIST)
+              SGVec_Load_Const(4. * HIT_DIST)
             ),
             valid_aligned
           );
@@ -256,28 +245,47 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   int num_fore = 0;
 
   if (lanes_true(march_result.validity)) { //all pixels colored
-    SGVecShort max_l_temp = SGVecShort_Fold_Max(SGVec_Bottom_Short(color.l), SGVec_Top_Short(color.l));
-    float max_l = SGVecShort_Get_Lane(SGVecShort_Fold_Max(max_l_temp, max_l_temp), 0);
+    // SGVec mag_squared = SGVec_Add_Mult_SGVec(
+    //   SGVec_Add_Mult_SGVec(
+    //     SGVec_Mult_SGVec(color.l, color.l),
+    //     color.a,
+    //     color.a
+    //   ),
+    //   color.b,
+    //   color.b
+    // );
+    // SGVecShort max_mag_temp = SGVecShort_Fold_Max(SGVec_Bottom_Short(mag_squared), SGVec_Top_Short(mag_squared));
+    // float max_mag = SGVecShort_Get_Lane(SGVecShort_Fold_Max(max_mag_temp, max_mag_temp), 0);
+    //
+    // SGVecShort min_mag_temp = SGVecShort_Fold_Min(SGVec_Bottom_Short(mag_squared), SGVec_Top_Short(mag_squared));
+    // float min_mag = SGVecShort_Get_Lane(SGVecShort_Fold_Min(min_mag_temp, min_mag_temp), 0);
+    //
+    // float avg_mag = (min_mag + max_mag) / (float) 2.;
 
-    SGVecShort min_l_temp = SGVecShort_Fold_Min(SGVec_Bottom_Short(color.l), SGVec_Top_Short(color.l));
-    float min_l = SGVecShort_Get_Lane(SGVecShort_Fold_Min(min_l_temp, min_l_temp), 0);
+    SGVecShort max_mag_temp = SGVecShort_Fold_Max(SGVec_Bottom_Short(color.l), SGVec_Top_Short(color.l));
+    float max_mag = SGVecShort_Get_Lane(SGVecShort_Fold_Max(max_mag_temp, max_mag_temp), 0);
 
-    float avg_l = (min_l + max_l) / (float) 2.;
+    SGVecShort min_mag_temp = SGVecShort_Fold_Min(SGVec_Bottom_Short(color.l), SGVec_Top_Short(color.l));
+    float min_mag = SGVecShort_Get_Lane(SGVecShort_Fold_Min(min_mag_temp, min_mag_temp), 0);
+
+    float avg_mag = (min_mag + max_mag) / (float) 2.;
+
     // printf("l_arr[0-3] lab_l[0-3], max_l, min_l, avg_l: %f %f %f %f / %f %f %f %f / %f %f %f\n", l_arr[0], l_arr[1], l_arr[2], l_arr[3], color_l[0], color_l[1], color_l[2], color_l[3], max_l, min_l, avg_l);
 
     for (int i = 0; i < 4; i++) {
-      float i_l = color_l[i];
-      if (i_l >= avg_l) {
+      // float i_mag = color_l[i] * color_l[i] + color_a[i] * color_a[i] + color_b[i] * color_b[i];
+      float i_mag = color_l[i];
+      if (i_mag >= avg_mag) {
         shape |= 1 << i;
         num_fore++;
 
-        fore.l += i_l;
-        fore.a += color_a[i] * i_l;
-        fore.b += color_b[i] * i_l;
+        fore.l += color_l[i];
+        fore.a += color_a[i];
+        fore.b += color_b[i];
       } else {
-        back.l += i_l;
-        back.a += color_a[i] * i_l;
-        back.b += color_b[i] * i_l;
+        back.l += color_l[i];
+        back.a += color_a[i];
+        back.b += color_b[i];
       }
     }
   } else { //some black, prioritize edges over color accuracy
@@ -286,21 +294,22 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
         shape |= 1 << i;
         num_fore++;
 
-        float i_l = color_l[i];
-        fore.l += i_l;
-        fore.a += color_a[i] * i_l;
-        fore.b += color_b[i] * i_l;
+        fore.l += color_l[i];
+        fore.a += color_a[i];
+        fore.b += color_b[i];
       }
     }
   }
 
   if(num_fore > 0) {
     fore.l /= (float) num_fore;
-    // fore.a /= num_fore;
-    // fore.b /= num_fore;
+    fore.a /= (float) num_fore;
+    fore.b /= (float) num_fore;
   }
   if(num_fore < 4) {
     back.l /= (float) (4 - num_fore);
+    back.a /= (float) (4 - num_fore);
+    back.b /= (float) (4 - num_fore);
   }
 
   // printf("raw-pixel: fore: [L: %f, a: %f, b: %f]", fore.l, fore.a, fore.b);

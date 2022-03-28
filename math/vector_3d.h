@@ -2,6 +2,7 @@
 #define VECTOR_3D_H
 
 #include <math.h>
+#include <stdio.h>
 
 #include "../utils/types/simd.h"
 
@@ -21,6 +22,40 @@ struct float3D_s {
   float z;
 }
 float3D_t;
+
+inline
+SGVec3D_t SGVec3D_normalize(SGVec3D_t vec) {
+  SGVec recip_magnitude =
+    SGVec_Recip_Sqrt(
+      SGVec_Add_Mult_SGVec(
+        SGVec_Add_Mult_SGVec(
+          SGVec_Mult_SGVec(vec.x, vec.x),
+          vec.y,
+          vec.y
+        ),
+        vec.z,
+        vec.z
+      )
+    );
+    // printf("recip mag: %f %f %f %f\n", SGVec_Get_Lane(recip_magnitude, 0), SGVec_Get_Lane(recip_magnitude, 1), SGVec_Get_Lane(recip_magnitude, 2), SGVec_Get_Lane(recip_magnitude, 3));
+  return (SGVec3D_t) {
+    .x = SGVec_Mult_SGVec(vec.x, recip_magnitude),
+    .y = SGVec_Mult_SGVec(vec.y, recip_magnitude),
+    .z = SGVec_Mult_SGVec(vec.z, recip_magnitude)
+  };
+}
+
+inline
+float3D_t float_normalize(float3D_t vec) {
+  float magnitude = sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+  // printf("mag: %f\n", magnitude);
+
+  return (float3D_t) {
+    .x = vec.x / (float) magnitude,
+    .y = vec.y / (float) magnitude,
+    .z = vec.z / (float) magnitude
+  };
+}
 
 inline
 SGVec3D_t rot_vec3d(SGVec rots_sin, SGVec rots_cos, SGVec3D_t axis, SGVec3D_t p) {

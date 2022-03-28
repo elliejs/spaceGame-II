@@ -21,7 +21,7 @@ SGVec SGVec_distance(object_t * self, SGVec3D_t point) {
 
 static
 oklab_t get_color(object_t * self, float3D_t point) {
-  return linear_srgb_to_oklab((rgb_t) {0., 1., 0.});
+  return linear_srgb_to_oklab((rgb_t) {0., 0.5, 0.});
 }
 
 object_t create_planet(float3D_t origin, float radius) {

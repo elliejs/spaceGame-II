@@ -40,8 +40,13 @@ bool install_color(oklab_t color, unsigned int max_colors, oklab_t * color_stora
 }
 
 inline
-void create_gradient(oklab_t start, oklab_t end, unsigned int steps, unsigned int max_colors, oklab_t * color_storage, unsigned int * num_colors) {
+bool create_gradient(oklab_t start, oklab_t end, unsigned int steps, unsigned int max_colors, oklab_t * color_storage, unsigned int * num_colors, bool install_ends) {
   steps++;
+  if (install_ends) {
+    if (!install_color(start, max_colors, color_storage, num_colors)) return false;
+    if (!install_color(end,   max_colors, color_storage, num_colors)) return false;
+  }
+
   oklab_t delta = (oklab_t) {
     .l = (end.l - start.l) / (float) steps,
     .a = (end.a - start.a) / (float) steps,
@@ -52,8 +57,10 @@ void create_gradient(oklab_t start, oklab_t end, unsigned int steps, unsigned in
       .l = start.l + delta.l * i,
       .a = start.a + delta.a * i,
       .b = start.b + delta.b * i,
-    }, max_colors, color_storage, num_colors)) break;
+    }, max_colors, color_storage, num_colors)) return false;
   }
+
+  return true;
 }
 
 #endif /* end of include guard: PALETTE_HELPER_H */

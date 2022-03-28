@@ -25,16 +25,6 @@ struct object_s {
 };
 
 inline
-float3D_t float_normalize(float3D_t vec) {
-  float magnitude = sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
-  return (float3D_t) {
-    .x = vec.x / magnitude,
-    .y = vec.y / magnitude,
-    .z = vec.z / magnitude
-  };
-}
-
-inline
 SGVec SGVec_smooth_min(SGVec a, SGVec b, float k) {
   SGVec h = SGVec_Mult_Float(SGVec_Maximum(SGVec_Sub_SGVec(SGVec_Load_Const(k), SGVec_Absolute(SGVec_Sub_SGVec(a,b))), SGVec_ZERO), 1./k);
   return SGVec_Sub_SGVec(SGVec_Minimum(a, b), SGVec_Mult_Float(SGVec_Mult_Float(SGVec_Mult_SGVec(SGVec_Mult_SGVec(h,h),h),k),1.0/6.0));

@@ -17,7 +17,7 @@ SGVec SGVec_distance(object_t * self, SGVec3D_t point) {
 static
 oklab_t get_color(object_t * self, float3D_t point) {
   return (oklab_t) {
-    .l = 10.0,
+    .l = 1.0,
     .a = 0.,
     .b = 0.
   };
@@ -25,7 +25,7 @@ oklab_t get_color(object_t * self, float3D_t point) {
 
 SGVecOKLAB_t get_lighting(star_t * self, SGVec dists) {
   return (SGVecOKLAB_t) {
-    .l = SGVec_Mult_SGVec(SGVec_Load_Const(10000.), SGVec_Reciprocal(SGVec_Mult_SGVec(dists, dists))),
+    .l = SGVec_Mult_SGVec(SGVec_Load_Const(1000.), SGVec_Reciprocal(SGVec_Mult_SGVec(dists, dists))),
     .a = SGVec_Load_Const(0.),
     .b = SGVec_Load_Const(0.)
   };

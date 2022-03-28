@@ -136,13 +136,13 @@ world_snapshot_t request_snapshot(unsigned int id) {
   snapshot.chunks[0]->objects[0] = create_planet((float3D_t) {
     .x = 20.,
     .y = 20.,
-    .z = 30.
-  }, 5.);
+    .z = 100.
+  }, 50.);
   snapshot.chunks[0]->objects[1] = create_star((float3D_t) {
-    .x = 50,
-    .y = 50,
-    .z = 20
-  }, 5.);
+    .x = 100,
+    .y = 100,
+    .z = 50
+  }, 50.);
   snapshot.chunks[0]->lights[0] = snapshot.chunks[0]->objects + 1;
 
   return snapshot;

@@ -78,8 +78,7 @@ SGVec3D_t create_rays(orientation_t orientation, SGVec rots_sin_x, SGVec rots_co
       rots_cos_x,
       orientation.up,
       orientation.forward
-    )
-  );
+    ));
 }
 
 static
@@ -256,21 +255,29 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   render_client.num_colors = 0;
   render_client.colors = malloc(max_colors * sizeof(oklab_t));
 
-  //INSTALL COLORS HERE
+  // INSTALL COLORS HERE
   install_color((oklab_t) {
     .l = 0.,
     .a = 0.,
     .b = 0.
   }, max_colors, render_client.colors, &(render_client.num_colors));
-  for (int j = -7; j < 8; j++) {
-    for (int k = -7; k < 8; k++) {
-      install_color((oklab_t) {
-        .l = 2.,
-        .a = j * (1. / (float) 7.),
-        .b = k * (1. / (float) 7.)
-      }, max_colors, render_client.colors, &(render_client.num_colors));
-    }
-  }
+  // for (int j = -7; j < 8; j++) {
+  //   for (int k = -7; k < 8; k++) {
+  //     install_color((oklab_t) {
+  //       .l = 2.,
+  //       .a = j * (1. / (float) 7.),
+  //       .b = k * (1. / (float) 7.)
+  //     }, max_colors, render_client.colors, &(render_client.num_colors));
+  //   }
+  // }
+  create_gradient(
+    (oklab_t) {.l = 1., .a = 0., .b = 0.},
+    linear_srgb_to_oklab((rgb_t) {0., 0.5, 0.}),
+    20, max_colors, render_client.colors, &(render_client.num_colors), true);
+  create_gradient(
+    (oklab_t) {.l = 0., .a = 0., .b = 0.},
+    linear_srgb_to_oklab((rgb_t) {0., 0.5, 0.}),
+    20, max_colors, render_client.colors, &(render_client.num_colors), false);
 
   unsigned int header_len;
   unsigned char * header_data = nblessings_header_data(render_client.colors, render_client.num_colors, &header_len);
@@ -294,6 +301,10 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
 
 void end_render_daemon() {
   if (!render_client.active) return;
+
+  for(int i = 0; i < render_client.num_colors; i++) {
+    printf("color %i, l: %f, a: %f, b: %f\n", i, render_client.colors[i].l, render_client.colors[i].a, render_client.colors[i].b);
+  }
 
   printf("cancelling all jobs\n");
   for (int i = 0; i < NUM_THREADS; i++) pthread_cancel(render_client.pixel_worker_pids[i]);

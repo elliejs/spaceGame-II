@@ -8,3 +8,9 @@ SGVec SGVec3D_distance(SGVec3D_t a, SGVec3D_t b);
 
 extern inline
 float float3D_distance(float3D_t a, float3D_t b);
+
+extern inline
+SGVec3D_t SGVec3D_normalize(SGVec3D_t vec);
+
+extern inline
+float3D_t float_normalize(float3D_t vec);
