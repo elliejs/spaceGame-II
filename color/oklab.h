@@ -12,17 +12,17 @@
 
 typedef
 struct oklab_s {
-    float l;
-    float a;
-    float b;
+  float l;
+  float a;
+  float b;
 }
 oklab_t;
 
 typedef
 struct rgb_s {
-    float r;
-    float g;
-    float b;
+  float r;
+  float g;
+  float b;
 }
 rgb_t;
 
