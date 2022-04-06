@@ -35,8 +35,7 @@ struct world_snapshot_s {
   // unsigned long time;
   chunk_t * chunks[CUBE_NUM + 1];
   chunk_t ship_chunk;
-  // unsigned int num_ships;
-  // object_t ships[MAX_CLIENTS];
+  
   object_t * self;
 }
 world_snapshot_t;
