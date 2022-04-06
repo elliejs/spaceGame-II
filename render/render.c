@@ -43,17 +43,7 @@ march_result_t ray_march(SGVec3D_t origin, SGVec3D_t rays, world_snapshot_t * sn
 
       }
     }
-    // for(unsigned int j = 0; j < snapshot->num_ships; j++) {
-    //   object_t * o = snapshot->ships + j;
-    //   if (o == self_ship) continue;
-    //   SGVec dist_candidate = o->distance(o, point);
-    //   dist_step = SGVec_Minimum(dist_step, dist_candidate);
-    //
-    //   SGVecUInt dist_ternary = SGVec_Less_Or_Eq_Than(dist_candidate, dist_step);
-    //   obj_idx = SGVecUInt_Ternary(dist_ternary, SGVecUInt_Load_Const(j), obj_idx);
-    //   chunk_idx = SGVecUInt_Ternary(dist_ternary, SGVecUInt_Load_Const(CUBE_NUM), chunk_idx);
-    // }
-
+    
     // dist_step = SGVec_Mult_Float(dist_step, 0.5);
     dist_tot = SGVec_Add_SGVec(dist_tot, dist_step);
     point = (SGVec3D_t) {
