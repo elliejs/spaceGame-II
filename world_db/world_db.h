@@ -13,12 +13,29 @@
 #define CHUNK_POW 6
 #define CHUNK_SIZE (1 << CHUNK_POW)
 
-typedef
-struct fast_list_s {
-  unsigned int num;
-  unsigned int data[MAX_CLIENTS];
-}
-fast_list_t;
+// typedef
+// struct fast_list_s {
+//   unsigned int num;
+//   unsigned void * data;
+// }
+// fast_list_t;
+
+#define FAST_LIST_T(T, MAX)                   \
+  struct {                                    \
+    unsigned int num;                         \
+    T data[MAX];                              \
+  }
+
+#define PUSH_FAST_LIST(FL, X)                 \
+  FL.data[FL.num++] = X
+
+#define POP_FAST_LIST(FL, X)                  \
+  for(unsigned int i = 0; i < FL.num; i++) {  \
+    if(FL.data[i] == X) {                     \
+      FL.data[i] = FL.data[--FL.num];         \
+      break;                                  \
+    }                                         \
+  }
 
 typedef
 struct chunk_s {
@@ -45,7 +62,7 @@ struct world_db_s {
   // unsigned long time;
   // pthread_mutex_t time_mtx;
 
-  fast_list_t active_ids;
+  FAST_LIST_T(unsigned int, MAX_CLIENTS) active_ids;
   pthread_mutex_t active_ids_mtx;
 
   pthread_mutex_t player_mtxs[MAX_CLIENTS];
@@ -54,6 +71,7 @@ struct world_db_s {
     unsigned int chunk_id;
     float3D_t chunk_origin;
   } players[MAX_CLIENTS];
+  FAST_LIST_T(chunk_t, MAX_CLIENTS * CUBE_NUM) chunk_cache;
 }
 world_db_t;
 

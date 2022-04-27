@@ -4,19 +4,6 @@
 
 #include "world_db.h"
 
-void push_fast_list(fast_list_t * fast_list, unsigned int data) {
-  fast_list->data[fast_list->num++] = data;
-}
-
-void pop_fast_list(fast_list_t * fast_list, unsigned int data) {
-  for (int i = 0; i < fast_list->num; i++) {
-    if (fast_list->data[i] == data) {
-      fast_list->data[i] = fast_list->data[--fast_list->num];
-      return;
-    }
-  }
-}
-
 static
 world_db_t * world_db = NULL;
 
@@ -25,9 +12,10 @@ void start_world_db() {
     printf("WORLD_DB: Already instantiated, not double-mallocing\n");
     return;
   }
+
   world_db = (world_db_t *) mmap(NULL, sizeof(world_db_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-  MTX_INIT(world_db->active_ids_mtx);
-  for (int i = 0; i < MAX_CLIENTS; i++) MTX_INIT(world_db->player_mtxs[i]);
+  MTX_INIT(&(world_db->active_ids_mtx));
+  for (int i = 0; i < MAX_CLIENTS; i++) MTX_INIT(world_db->player_mtxs + i);
 }
 
 void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin) {
@@ -42,29 +30,31 @@ void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin) {
 }
 
 void request_player(unsigned int id) {
-  MTX_LOCK(world_db->active_ids_mtx);
-  push_fast_list(&(world_db->active_ids), id);
-  MTX_UNLOCK(world_db->active_ids_mtx);
+  printf("requesting player\n");
+  MTX_LOCK(&(world_db->active_ids_mtx));
+  PUSH_FAST_LIST(world_db->active_ids, id);
+  MTX_UNLOCK(&(world_db->active_ids_mtx));
 
-  MTX_LOCK(world_db->player_mtxs[id]);
+  MTX_LOCK(&(world_db->player_mtxs[id]));
   world_db->players[id].self = create_ship((float3D_t) {
     .x = 20.,
     .y = 20.,
     .z = 20.
   });
   point_to_chunk_id(world_db->players[id].self.float_origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
-  MTX_UNLOCK(world_db->player_mtxs[id]);
+  MTX_UNLOCK(&(world_db->player_mtxs[id]));
+  printf("player created\n");
 }
 
 void request_player_end(unsigned int id) {
-  MTX_LOCK(world_db->active_ids_mtx);
-  pop_fast_list(&(world_db->active_ids), id);
-  MTX_UNLOCK(world_db->active_ids_mtx);
+  MTX_LOCK(&(world_db->active_ids_mtx));
+  POP_FAST_LIST(world_db->active_ids, id);
+  MTX_UNLOCK(&(world_db->active_ids_mtx));
 }
 
 void end_world_db() {
-  MTX_DESTROY(world_db->active_ids_mtx);
-  for (int i = 0; i < MAX_CLIENTS; i++) MTX_DESTROY(world_db->player_mtxs[i]);
+  MTX_DESTROY(&(world_db->active_ids_mtx));
+  for (int i = 0; i < MAX_CLIENTS; i++) MTX_DESTROY(world_db->player_mtxs + i);
   munmap(world_db, sizeof(world_db_t));
 }
 
@@ -88,6 +78,7 @@ bool chunk_ids_contains(unsigned int * container, unsigned int x) {
 }
 
 world_snapshot_t request_snapshot(unsigned int id) {
+  printf("[world_db serving %u]: A\n", id);
   world_snapshot_t snapshot;
   snapshot.chunks[CUBE_NUM] = &(snapshot.ship_chunk);
   // snapshot.self = &(world_db->players[id].self);
@@ -95,28 +86,27 @@ world_snapshot_t request_snapshot(unsigned int id) {
   snapshot.ship_chunk.num_lights = 0;
 
   unsigned int accept_chunk_ids[CUBE_NUM];
-  MTX_LOCK(world_db->player_mtxs[id]);
+  MTX_LOCK(world_db->player_mtxs + id);
   // snapshot.ships[snapshot.num_ships++] = world_db->players[id].self;
   gather_acceptable_chunks(world_db->players[id].chunk_id, accept_chunk_ids);
-  MTX_UNLOCK(world_db->player_mtxs[id]);
+  MTX_UNLOCK(world_db->player_mtxs + id);
 
-  MTX_LOCK(world_db->active_ids_mtx);
+  MTX_LOCK(&(world_db->active_ids_mtx));
   snapshot.ship_chunk.objects = malloc(world_db->active_ids.num * sizeof(object_t));
   snapshot.ship_chunk.num_objects = 0;
 
   for (int i = 0; i < world_db->active_ids.num; i++) {
     unsigned int iter_id = world_db->active_ids.data[i];
-    MTX_LOCK(world_db->player_mtxs[iter_id]);
+    MTX_LOCK(world_db->player_mtxs + iter_id);
     if (chunk_ids_contains(accept_chunk_ids, world_db->players[iter_id].chunk_id)) {
       if (iter_id == id) {
         snapshot.self = snapshot.ship_chunk.objects + snapshot.ship_chunk.num_objects;
       }
       snapshot.ship_chunk.objects[snapshot.ship_chunk.num_objects++] = world_db->players[iter_id].self;
     }
-    MTX_UNLOCK(world_db->player_mtxs[iter_id]);
+    MTX_UNLOCK(world_db->player_mtxs + iter_id);
   }
-  MTX_UNLOCK(world_db->active_ids_mtx);
-
+  MTX_UNLOCK(&(world_db->active_ids_mtx));
   //REMOVE LATER TESTING ONLY
   for (int i = 1; i < CUBE_NUM; i++) {
     snapshot.chunks[i] = malloc(1 * sizeof(chunk_t));
@@ -153,7 +143,7 @@ world_snapshot_t request_snapshot(unsigned int id) {
 }
 
 void request_thrust(unsigned int id, float amt) {
-  MTX_LOCK(world_db->player_mtxs[id]);
+  MTX_LOCK(world_db->player_mtxs + id);
   world_db->players[id].self.SGVec_origin = (SGVec3D_t) {
     .x = SGVec_Add_Mult_SGVec(world_db->players[id].self.SGVec_origin.x, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.x),
     .y = SGVec_Add_Mult_SGVec(world_db->players[id].self.SGVec_origin.y, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.y),
@@ -165,29 +155,29 @@ void request_thrust(unsigned int id, float amt) {
     .z = world_db->players[id].self.float_origin.z + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.z, 0))
   };
   point_to_chunk_id(world_db->players[id].self.float_origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
-  MTX_UNLOCK(world_db->player_mtxs[id]);
+  MTX_UNLOCK(world_db->player_mtxs + id);
 }
 void request_yaw(unsigned int id, float amt) {
   SGVec amt_cos = SGVec_Load_Const(cosf(amt));
   SGVec amt_sin = SGVec_Load_Const(sinf(amt));
-  MTX_LOCK(world_db->player_mtxs[id]);
+  MTX_LOCK(world_db->player_mtxs + id);
   world_db->players[id].self.ship.orientation.forward = rot_vec3d(amt_sin, amt_cos, world_db->players[id].self.ship.orientation.up, world_db->players[id].self.ship.orientation.forward);
   world_db->players[id].self.ship.orientation.right   = rot_vec3d(amt_sin, amt_cos, world_db->players[id].self.ship.orientation.up, world_db->players[id].self.ship.orientation.right);
-  MTX_UNLOCK(world_db->player_mtxs[id]);
+  MTX_UNLOCK(world_db->player_mtxs + id);
 }
 void request_pitch(unsigned int id, float amt) {
   SGVec amt_cos = SGVec_Load_Const(cosf(amt));
   SGVec amt_sin = SGVec_Load_Const(sinf(amt));
-  MTX_LOCK(world_db->player_mtxs[id]);
+  MTX_LOCK(world_db->player_mtxs + id);
   world_db->players[id].self.ship.orientation.forward = rot_vec3d(amt_sin, amt_cos, world_db->players[id].self.ship.orientation.right, world_db->players[id].self.ship.orientation.forward);
   world_db->players[id].self.ship.orientation.up      = rot_vec3d(amt_sin, amt_cos, world_db->players[id].self.ship.orientation.right, world_db->players[id].self.ship.orientation.up);
-  MTX_UNLOCK(world_db->player_mtxs[id]);
+  MTX_UNLOCK(world_db->player_mtxs + id);
 }
 void request_roll(unsigned int id, float amt) {
   SGVec amt_cos = SGVec_Load_Const(cosf(amt));
   SGVec amt_sin = SGVec_Load_Const(sinf(amt));
-  MTX_LOCK(world_db->player_mtxs[id]);
+  MTX_LOCK(world_db->player_mtxs + id);
   world_db->players[id].self.ship.orientation.up = rot_vec3d(amt_sin, amt_cos, world_db->players[id].self.ship.orientation.forward, world_db->players[id].self.ship.orientation.up);
   world_db->players[id].self.ship.orientation.right   = rot_vec3d(amt_sin, amt_cos, world_db->players[id].self.ship.orientation.forward, world_db->players[id].self.ship.orientation.right);
-  MTX_UNLOCK(world_db->player_mtxs[id]);
+  MTX_UNLOCK(world_db->player_mtxs + id);
 }
