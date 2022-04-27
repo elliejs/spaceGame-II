@@ -20,9 +20,6 @@ oklab_t get_color(object_t * self, float3D_t point) {
 }
 
 object_t create_ship(float3D_t origin) {
-  const SGVec vec_one = SGVec_Load_Const(1.);
-  const SGVec vec_zero = SGVec_Load_Const(0.);
-
   return (object_t) {
     .float_origin = origin,
     .SGVec_origin = (SGVec3D_t) {
@@ -36,19 +33,19 @@ object_t create_ship(float3D_t origin) {
     .ship = (ship_t) {
       .orientation = (orientation_t) {
         .up = (SGVec3D_t) {
-          .x = vec_zero,
-          .y = vec_one,
-          .z = vec_zero
+          .x = SGVec_ZERO,
+          .y = SGVec_ONE,
+          .z = SGVec_ZERO
         },
         .forward = (SGVec3D_t) {
-          .x = vec_zero,
-          .y = vec_zero,
-          .z = vec_one,
+          .x = SGVec_ZERO,
+          .y = SGVec_ZERO,
+          .z = SGVec_ONE,
         },
         .right = (SGVec3D_t) {
-          .x = vec_one,
-          .y = vec_zero,
-          .z = vec_zero
+          .x = SGVec_ONE,
+          .y = SGVec_ZERO,
+          .z = SGVec_ZERO
         }
       },
       .SGVec_radius = SGVec_Load_Const(2.),
