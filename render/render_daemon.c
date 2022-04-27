@@ -41,6 +41,7 @@ struct {
 
   int width;
   int height;
+  pthread_mutex_t dim_mtx;
   float quarter_rot_x;
   float quarter_rot_y;
   float rot_finder_x;
@@ -59,7 +60,10 @@ struct {
 
   ssh_channel channel;
 }
-render_client;
+render_client = {
+  .framebuffer = NULL,
+  .stream_buffer = NULL
+};
 
 static
 const struct timespec fps_ts = (struct timespec) {
@@ -92,11 +96,11 @@ void * pixel_task(void * nothing) {
 
     pixel_job_t * job = NULL;
     // printf("d\n");
-    MTX_LOCK(render_client.mtx);
+    MTX_LOCK(&(render_client.mtx));
     // printf("e\n");
     job = render_client.pixel_jobs;
     render_client.pixel_jobs = render_client.pixel_jobs->next;
-    MTX_UNLOCK(render_client.mtx);
+    MTX_UNLOCK(&(render_client.mtx));
     // printf("f\n");
 
     if (!job) continue;
@@ -178,10 +182,10 @@ void enqueue_render() {
         .y = y
       };
 
-      MTX_LOCK(render_client.mtx);
+      MTX_LOCK(&(render_client.mtx));
       job->next = render_client.pixel_jobs;
       render_client.pixel_jobs = job;
-      MTX_UNLOCK(render_client.mtx);
+      MTX_UNLOCK(&(render_client.mtx));
 
       SEM_POST(render_client.sem, 0);
       post++;
@@ -189,6 +193,32 @@ void enqueue_render() {
   }
 
   // printf("enqueued %d pixels\n", post);
+}
+
+#define DEG2RAD(X) (((float) M_PI / (float) 180.) * (float) (X))
+
+static
+const float FOV_RAD = DEG2RAD(FOV);
+
+void render_daemon_request_dimensions(int width, int height) {
+  MTX_LOCK(&(render_client.dim_mtx));
+  printf("nuts\n");
+  render_client.width = width;
+  render_client.height = height;
+  const int largest_dim = width > (2 * height) ? width : (2 * height);
+  const float x_ratio = (float) width / (float) largest_dim;
+  const float y_ratio = ((float) 2. * (float) height) / largest_dim;
+
+  render_client.rot_finder_x = (x_ratio * FOV_RAD) / (float) width;
+  render_client.rot_finder_y = (y_ratio * FOV_RAD) / (float) height;
+  render_client.quarter_rot_x = render_client.rot_finder_x / (float) 4.;
+  render_client.quarter_rot_y = render_client.rot_finder_y / (float) 4.;
+  render_client.half_fov_x = x_ratio * (FOV_RAD / (float) 2.);
+  render_client.half_fov_y = y_ratio * (FOV_RAD / (float) 2.);
+
+  render_client.framebuffer = realloc(render_client.framebuffer, width * height * sizeof(pixel_t));
+  render_client.stream_buffer = realloc(render_client.stream_buffer, MAX_FRAMEBUFFER_SIZE(width, height) * sizeof(char));
+  MTX_UNLOCK(&(render_client.dim_mtx));
 }
 
 static inline
@@ -206,51 +236,39 @@ void blit() {
 }
 
 static
-void * render_task(void * nothing) {
+void * render_task(void * data) {
+  unsigned int id = *(unsigned int *) data;
   for (;;) {
+    printf("[render_client %u]: top loop\n", id);
     render_client.snapshot = request_snapshot(render_client.id);
+    printf("[render_client %u]: snapshotted\n", id);
+    MTX_LOCK(&(render_client.dim_mtx));
+    printf("[render_client %u]: dims locked\n", id);
     enqueue_render();
-    // printf("queued\n");
+    printf("[render_client %u]: queued\n", id);
     nanosleep(&fps_ts, NULL);
-    // printf("shlept\n");
+    printf("[render_client %u]: shlept\n", id);
     blit();
-    // printf("blitted\n");
+    MTX_UNLOCK(&(render_client.dim_mtx));
+
+    printf("[render_client %u]: blitted\n", id);
     for(int i = 0; i < CUBE_NUM; i++) {
       free(render_client.snapshot.chunks[i]->objects);
       free(render_client.snapshot.chunks[i]->lights);
-      free(render_client.snapshot.chunks[i]);
+      free(render_client.snapshot.chunks[i]); //TESTING ONLY
     }
-    free(render_client.snapshot.chunks[CUBE_NUM]->objects);
-    free(render_client.snapshot.chunks[CUBE_NUM]->lights);
+    // free(render_client.snapshot.chunks[CUBE_NUM]->objects);
+    // free(render_client.snapshot.chunks[CUBE_NUM]->lights);
   }
 }
 
-#define DEG2RAD(X) (((float) M_PI / (float) 180.) * (float) (X))
-
-static
-const float FOV_RAD = DEG2RAD(FOV);
-
-void aspect_ratio_properties(int width, int height) {
-  render_client.width = width;
-  render_client.height = height;
-  const int largest_dim = width > (2 * height) ? width : (2 * height);
-  const float x_ratio = (float) width / (float) largest_dim;
-  const float y_ratio = ((float) 2. * (float) height) / largest_dim;
-
-  render_client.rot_finder_x = (x_ratio * FOV_RAD) / (float) width;
-  render_client.rot_finder_y = (y_ratio * FOV_RAD) / (float) height;
-  render_client.quarter_rot_x = render_client.rot_finder_x / (float) 4.;
-  render_client.quarter_rot_y = render_client.rot_finder_y / (float) 4.;
-  render_client.half_fov_x = x_ratio * (FOV_RAD / (float) 2.);
-  render_client.half_fov_y = y_ratio * (FOV_RAD / (float) 2.);
-
-  render_client.framebuffer = malloc(width * height * sizeof(pixel_t));
-  render_client.stream_buffer = malloc(MAX_FRAMEBUFFER_SIZE(width, height) * sizeof(char));
-}
-
 void render_daemon(int width, int height, unsigned int max_colors, ssh_channel channel, unsigned int id) {
+  printf("starting render daemon\n");
   render_client.id = id;
-  aspect_ratio_properties(width, height);
+
+  MTX_INIT(&(render_client.dim_mtx));
+
+  render_daemon_request_dimensions(width, height);
 
   render_client.channel = channel;
 
@@ -280,6 +298,10 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
     (oklab_t) {.l = 0., .a = 0., .b = 0.},
     linear_srgb_to_oklab((rgb_t) {0., 0.5, 0.}),
     20, max_colors, render_client.colors, &(render_client.num_colors), false);
+  // create_gradient(
+  //   (oklab_t) {.l = 1., .a = 0., .b = 0.},
+  //   linear_srgb_to_oklab((rgb_t) {1., 0., 0.}),
+  //   20, max_colors, render_client.colors, &(render_client.num_colors), false);
 
   unsigned int header_len;
   unsigned char * header_data = nblessings_header_data(render_client.colors, render_client.num_colors, &header_len);
@@ -291,12 +313,12 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
 
   render_client.pixel_jobs = NULL;
 
-  MTX_INIT(render_client.mtx);
-  SEM_INIT(render_client.sem, 2);
+  MTX_INIT(&(render_client.mtx));
+  render_client.sem = SEM_INIT(2);
   SEM_SETVAL(render_client.sem, 0, 0);
   SEM_SETVAL(render_client.sem, 1, 0);
   for (int i = 0; i < NUM_THREADS; i++) pthread_create(render_client.pixel_worker_pids + i, NULL, pixel_task, (void *) NULL);
-  pthread_create(&(render_client.pid), NULL, render_task, (void *) NULL);
+  pthread_create(&(render_client.pid), NULL, render_task, (void *) &(render_client.id));
 
   render_client.active = true;
 }
@@ -320,7 +342,8 @@ void end_render_daemon() {
   printf("destroying sem\n");
   SEM_DESTROY(render_client.sem);
   printf("destroying mtx\n");
-  MTX_DESTROY(render_client.mtx);
+  MTX_DESTROY(&(render_client.dim_mtx));
+  MTX_DESTROY(&(render_client.mtx));
 
   free(render_client.colors);
   free(render_client.framebuffer);
