@@ -36,8 +36,10 @@
 
 Compile:
 ```
-gcc */*.c */*/*.c -lssh -lm -O3 -ffast-math -o spaceGame
+gcc */*.c */*/*.c -lssh -lm -O3 -ffast-math -o spaceGame [-D SG_DEBUG]
 ```
+
+Include the `-D SG_DEBUG` to get debug print statements and such.
 
 ---
 
