@@ -33,7 +33,6 @@ SGVecOKLAB_t radiance(star_t * self, SGVec dists) {
 
 object_t create_star(SGVec3D_t origin, SGVec radius) {
   return (object_t) {
-    // .float_origin = origin,
     .origin = origin,
     .radius = radius,
     .distance = distance,

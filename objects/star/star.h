@@ -7,7 +7,6 @@
 
 typedef
 struct star_s {
-  // float float_radius;
   SGVecOKLAB_t (*radiance)(struct star_s *, SGVec distance);
 }
 star_t;

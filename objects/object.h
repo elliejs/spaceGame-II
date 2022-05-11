@@ -37,16 +37,4 @@ SGVec SGVec_smooth_max(SGVec a, SGVec b, float k) {
   return SGVec_Add_SGVec(SGVec_Maximum(a, b), SGVec_Mult_Float(SGVec_Mult_Float(SGVec_Mult_SGVec(SGVec_Mult_SGVec(h,h),h),k),1.0/6.0));
 }
 
-// inline
-// float float_smooth_min(float a, float b, float k) {
-//   float h = fmax(k - fabs(a - b), 0.) / k;
-//   return fmin(a, b) - h * h * h * k * (1.0/6.0);
-// }
-//
-// inline
-// float float_smooth_max(float a, float b, float k) {
-//   float h = fmax(k - fabs(a - b), 0.) / k;
-//   return fmax(a, b) + h * h * h * k * (1.0/6.0);
-// }
-
 #endif /* end of include guard: OBJECT_H */

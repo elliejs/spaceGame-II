@@ -4,15 +4,6 @@
 
 #include "../../world_db/world_db.h"
 
-// static
-// float3D_t float_normal(object_t * self, float3D_t point) {
-//   return float_normalize((float3D_t) {
-//     .x = point.x - self->float_origin.x,
-//     .y = point.y - self->float_origin.y,
-//     .z = point.z - self->float_origin.z
-//   });
-// }
-
 static
 SGVec3D_t normal(object_t * self, SGVec3D_t point) {
   return SGVec3D_normalize((SGVec3D_t) {
@@ -40,15 +31,12 @@ SGVecOKLAB_t color(object_t * self, SGVec3D_t point) {
 
 object_t create_planet(SGVec3D_t origin, SGVec radius) {
   return (object_t) {
-    // .float_origin = origin,
     .origin = origin,
     .radius = radius,
     .distance = distance,
     .normal = normal,
-    // .float_normal = float_normal,
     .color = color,
     .planet = (planet_t) {
-      // .float_radius = radius
     }
   };
 }

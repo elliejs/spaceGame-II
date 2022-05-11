@@ -90,31 +90,12 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   uint32_t obj_idx[4];    SGVecUInt_Store_Array(obj_idx, march_result.obj_idx);
   uint32_t chunk_idx[4];  SGVecUInt_Store_Array(chunk_idx, march_result.chunk_idx);
   uint32_t validity[4];   SGVecUInt_Store_Array(validity, march_result.validity);
-  // float point_x[4];       SGVec_Store_Array(point_x, march_result.point.x);
-  // float point_y[4];       SGVec_Store_Array(point_y, march_result.point.y);
-  // float point_z[4];       SGVec_Store_Array(point_z, march_result.point.z);
-  //
-  // object_t * hit_objs[4];
-  // for(int i = 0; i < 4; i++) {
-  //   hit_objs[i] = snapshot->chunks[chunk_idx[i]]->objects + obj_idx[i];
-  // }
-
-  //// surface normals
-  // SGVec3D_t normals = normal(hit_objs, march_result.point);
 
   SGVecOKLAB_t colors;
   SGVec3D_t normals;
 
-  // float normal_arr_x[4] = {0.};
-  // float normal_arr_y[4] = {0.};
-  // float normal_arr_z[4] = {0.};
-
-  // float l_arr[4] = {0.};
-  // float a_arr[4] = {0.};
-  // float b_arr[4] = {0.};
   /// EWWWWWWWWWWWWWWWW
   if (validity[0]) {
-    // float3D_t point = (float3D_t) {point_x[i], point_y[i], point_z[i]};
     object_t * o = snapshot->chunks[chunk_idx[0]]->objects + obj_idx[0];
     SGVecOKLAB_t obj_color = o->color(o, march_result.point);
     SGVec3D_t obj_normal = o->normal(o, march_result.point);
@@ -166,59 +147,20 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
     steal_lane(normals.y, obj_normal.y, 3);
     steal_lane(normals.z, obj_normal.z, 3);
   }
-      // printf("obj[%d %d] color: %f %f %f\n", chunk_idx[i], obj_idx[i], lab.l, lab.a, lab.b);
-      // l_arr[i] = lab.l;
-      // a_arr[i] = lab.a;
-      // b_arr[i] = lab.b;
-
-      // normal_arr_x[i] = normal_vec.x;
-      // normal_arr_y[i] = normal_vec.y;
-      // normal_arr_z[i] = normal_vec.z;
-  //lighting/coloring
-  // SGVecOKLAB_t color = (SGVecOKLAB_t) {
-  //   .l = SGVec_Load_Array(l_arr),
-  //   .a = SGVec_Load_Array(a_arr),
-  //   .b = SGVec_Load_Array(b_arr)
-  // };
-  //
-  // SGVec3D_t normals = (SGVec3D_t) {
-  //   .x = SGVec_Load_Array(normal_arr_x),
-  //   .y = SGVec_Load_Array(normal_arr_y),
-  //   .z = SGVec_Load_Array(normal_arr_z)
-  // };
-
-
-  // march_result.point.x = SGVec_Add_SGVec(march_result.point.x, SGVec_Mult_Float(normals.x, 10));
-  // march_result.point.y = SGVec_Add_SGVec(march_result.point.y, SGVec_Mult_Float(normals.y, 10));
-  // march_result.point.z = SGVec_Add_SGVec(march_result.point.z, SGVec_Mult_Float(normals.z, 10));
-
-  // printf("normals: x0 x1 x2 x3: %f %f %f %f\nnormals: y0 y1 y2 y3: %f %f %f %f\nnormals: z0 z1 z2 z3: %f %f %f %f\n", normal_arr_x[0], normal_arr_x[1], normal_arr_x[2], normal_arr_x[3], normal_arr_y[0], normal_arr_y[1], normal_arr_y[2], normal_arr_y[3], normal_arr_z[0], normal_arr_z[1], normal_arr_z[2], normal_arr_z[3]);
-  // SGVec3D_t normals = (SGVec3D_t) {
-  //   .x = SGVec_Load_Const(0.),
-  //   .y = SGVec_Load_Const(1.),
-  //   .z = SGVec_Load_Const(0.)
-  // };
 
   for(int c = 0; c < CUBE_NUM; c++) {
     for(int l = 0; l < snapshot->chunks[c]->num_lights; l++) {
       object_t * light = snapshot->chunks[c]->lights[l];
-      // SGVecUInt light_isNOT_self = SGVecUInt_Load_Array(((uint32_t []) {
-      //   (light == snapshot->chunks[chunk_idx[0]]->objects + obj_idx[0]) ? 0 : ~0,
-      //   (light == snapshot->chunks[chunk_idx[1]]->objects + obj_idx[1]) ? 0 : ~0,
-      //   (light == snapshot->chunks[chunk_idx[2]]->objects + obj_idx[2]) ? 0 : ~0,
-      //   (light == snapshot->chunks[chunk_idx[3]]->objects + obj_idx[3]) ? 0 : ~0
-      // }));
 
       SGVec3D_t ray_to_light =
       SGVec3D_normalize(
         (SGVec3D_t) {
-        .x = SGVec_Sub_SGVec(light->origin.x, march_result.point.x),
-        .y = SGVec_Sub_SGVec(light->origin.y, march_result.point.y),
-        .z = SGVec_Sub_SGVec(light->origin.z, march_result.point.z)
-      }
-    )
-    ;
-      // printf("ray_to_light: x0 x1 x2 x3: %f %f %f %f\nray_to_light: y0 y1 y2 y3: %f %f %f %f\nray_to_light: z0 z1 z2 z3: %f %f %f %f\n\n", SGVec_Get_Lane(ray_to_light.x, 0), SGVec_Get_Lane(ray_to_light.x, 1), SGVec_Get_Lane(ray_to_light.x, 2), SGVec_Get_Lane(ray_to_light.x, 3), SGVec_Get_Lane(ray_to_light.y, 0), SGVec_Get_Lane(ray_to_light.y, 1), SGVec_Get_Lane(ray_to_light.y, 2), SGVec_Get_Lane(ray_to_light.y, 3), SGVec_Get_Lane(ray_to_light.z, 0), SGVec_Get_Lane(ray_to_light.z, 1), SGVec_Get_Lane(ray_to_light.z, 2), SGVec_Get_Lane(ray_to_light.z, 3));
+          .x = SGVec_Sub_SGVec(light->origin.x, march_result.point.x),
+          .y = SGVec_Sub_SGVec(light->origin.y, march_result.point.y),
+          .z = SGVec_Sub_SGVec(light->origin.z, march_result.point.z)
+        }
+      )
+      ;
       SGVec alignment =
       SGVec_Add_Mult_SGVec(
         SGVec_Add_Mult_SGVec(

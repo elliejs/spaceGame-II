@@ -5,7 +5,6 @@
 
 typedef
 struct planet_s {
-  // float float_radius;
 }
 planet_t;
 

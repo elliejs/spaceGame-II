@@ -90,7 +90,6 @@ bool chunk_ids_contains(unsigned int * container, unsigned int x) {
 }
 
 world_snapshot_t request_snapshot(unsigned int id) {
-  printf("[world_db serving %u]: A\n", id);
   world_snapshot_t snapshot;
   snapshot.chunks[CUBE_NUM] = &(snapshot.ship_chunk);
   // snapshot.self = &(world_db->players[id].self);
@@ -99,7 +98,6 @@ world_snapshot_t request_snapshot(unsigned int id) {
 
   unsigned int accept_chunk_ids[CUBE_NUM];
   MTX_LOCK(world_db->player_mtxs + id);
-  // snapshot.ships[snapshot.num_ships++] = world_db->players[id].self;
   gather_acceptable_chunks(world_db->players[id].chunk_id, accept_chunk_ids);
   MTX_UNLOCK(world_db->player_mtxs + id);
 

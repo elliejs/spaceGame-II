@@ -14,7 +14,6 @@ orientation_t;
 typedef
 struct ship_s {
   orientation_t orientation;
-  // float float_radius;
 }
 ship_t;
 
