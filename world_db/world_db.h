@@ -52,7 +52,7 @@ struct world_snapshot_s {
   // unsigned long time;
   chunk_t * chunks[CUBE_NUM + 1];
   chunk_t ship_chunk;
-  
+
   object_t * self;
 }
 world_snapshot_t;
@@ -69,7 +69,6 @@ struct world_db_s {
   struct {
     object_t self;
     unsigned int chunk_id;
-    float3D_t chunk_origin;
   } players[MAX_CLIENTS];
   FAST_LIST_T(chunk_t, MAX_CLIENTS * CUBE_NUM) chunk_cache;
 }

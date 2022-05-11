@@ -26,6 +26,7 @@
   //int
 #   define SGVecUInt_Load_Const(X)              vdupq_n_u32((X))
 #   define SGVecUInt_Load_Array(X)              vld1q_u32((X))
+#   define SGVecUInt_Load_Lane(X, Y, Z)         vld1q_lane_u32((X), (Y), (Z))
 
 //STORE
   //float
@@ -220,5 +221,10 @@ bool lanes_false(SGVecUInt x) {
 // SGVec SGVec_Clamp(SGVec x, float min, float max) {
 //   return SGVec_Minimum(SGVec_Maximum(x, SGVec_Load_Const(min)), SGVec_Load_Const(max));
 // }
+
+#define steal_lane(source, mask, lane) { \
+  static const int all_one = ~0; \
+  source = SGVec_Ternary(SGVecUInt_Load_Lane(&all_one, SGVecUInt_ZERO, lane), mask, source); \
+}
 
 #endif /* end of include guard: SIMD_H */

@@ -18,16 +18,27 @@ void start_world_db() {
   for (int i = 0; i < MAX_CLIENTS; i++) MTX_INIT(world_db->player_mtxs + i);
 }
 
-void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin) {
-  unsigned int point_origin_x = (int) roundf(point.x) >> CHUNK_POW;
-  origin->x = (float) point_origin_x;
-  unsigned int point_origin_y = (int) roundf(point.y) >> CHUNK_POW;
-  origin->y = (float) point_origin_y;
-  unsigned int point_origin_z = (int) roundf(point.z) >> CHUNK_POW;
-  origin->z = (float) point_origin_y;
+// void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin) {
+//   unsigned int point_origin_x = (int) roundf(point.x) >> CHUNK_POW;
+//   origin->x = (float) point_origin_x;
+//   unsigned int point_origin_y = (int) roundf(point.y) >> CHUNK_POW;
+//   origin->y = (float) point_origin_y;
+//   unsigned int point_origin_z = (int) roundf(point.z) >> CHUNK_POW;
+//   origin->z = (float) point_origin_y;
+//
+//   *id = (((point_origin_z << CHUNK_POW) | point_origin_y) << CHUNK_POW) | point_origin_x;
+// }
 
-  *id = (((point_origin_z << CHUNK_POW) | point_origin_y) << CHUNK_POW) | point_origin_x;
+unsigned int calc_chunk_id(SGVec3D_t point) {
+  return
+    (((int) SGVec_Get_Lane(point.z, 0) & (CHUNK_SIZE - 1)) << (CHUNK_POW * 2))
+    |
+    (((int) SGVec_Get_Lane(point.y, 0) & (CHUNK_SIZE - 1)) << CHUNK_POW)
+    |
+    (((int) SGVec_Get_Lane(point.x, 0) & (CHUNK_SIZE - 1)))
+    ;
 }
+
 
 void request_player(unsigned int id) {
   printf("requesting player\n");
@@ -36,12 +47,13 @@ void request_player(unsigned int id) {
   MTX_UNLOCK(&(world_db->active_ids_mtx));
 
   MTX_LOCK(&(world_db->player_mtxs[id]));
-  world_db->players[id].self = create_ship((float3D_t) {
-    .x = 20.,
-    .y = 20.,
-    .z = 20.
+  world_db->players[id].self = create_ship((SGVec3D_t) {
+    .x = SGVec_Load_Const(20.),
+    .y = SGVec_Load_Const(20.),
+    .z = SGVec_Load_Const(20.)
   });
-  point_to_chunk_id(world_db->players[id].self.float_origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
+  world_db->players[id].chunk_id = calc_chunk_id(world_db->players[id].self.origin);
+  // point_to_chunk_id(world_db->players[id].self.float_origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
   MTX_UNLOCK(&(world_db->player_mtxs[id]));
   printf("player created\n");
 }
@@ -127,16 +139,16 @@ world_snapshot_t request_snapshot(unsigned int id) {
     .lights = malloc(1 * sizeof(object_t *))
   };
 
-  snapshot.chunks[0]->objects[0] = create_planet((float3D_t) {
-    .x = 20.,
-    .y = 20.,
-    .z = 100.
-  }, 50.);
-  snapshot.chunks[0]->objects[1] = create_star((float3D_t) {
-    .x = 100,
-    .y = 100,
-    .z = 50
-  }, 50.);
+  snapshot.chunks[0]->objects[0] = create_planet((SGVec3D_t) {
+    .x = SGVec_Load_Const(20.),
+    .y = SGVec_Load_Const(20.),
+    .z = SGVec_Load_Const(100.)
+  }, SGVec_Load_Const(50.));
+  snapshot.chunks[0]->objects[1] = create_star((SGVec3D_t) {
+    .x = SGVec_Load_Const(100),
+    .y = SGVec_Load_Const(100),
+    .z = SGVec_Load_Const(50.),
+  }, SGVec_Load_Const(50.));
   snapshot.chunks[0]->lights[0] = snapshot.chunks[0]->objects + 1;
 
   return snapshot;
@@ -144,17 +156,25 @@ world_snapshot_t request_snapshot(unsigned int id) {
 
 void request_thrust(unsigned int id, float amt) {
   MTX_LOCK(world_db->player_mtxs + id);
-  world_db->players[id].self.SGVec_origin = (SGVec3D_t) {
-    .x = SGVec_Add_Mult_SGVec(world_db->players[id].self.SGVec_origin.x, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.x),
-    .y = SGVec_Add_Mult_SGVec(world_db->players[id].self.SGVec_origin.y, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.y),
-    .z = SGVec_Add_Mult_SGVec(world_db->players[id].self.SGVec_origin.z, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.z)
+  world_db->players[id].self.origin = (SGVec3D_t) {
+    .x = SGVec_Add_Mult_SGVec(world_db->players[id].self.origin.x, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.x),
+    .y = SGVec_Add_Mult_SGVec(world_db->players[id].self.origin.y, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.y),
+    .z = SGVec_Add_Mult_SGVec(world_db->players[id].self.origin.z, SGVec_Load_Const(amt), world_db->players[id].self.ship.orientation.forward.z)
   };
-  world_db->players[id].self.float_origin = (float3D_t) {
-    .x = world_db->players[id].self.float_origin.x + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.x, 0)),
-    .y = world_db->players[id].self.float_origin.y + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.y, 0)),
-    .z = world_db->players[id].self.float_origin.z + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.z, 0))
-  };
-  point_to_chunk_id(world_db->players[id].self.float_origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
+
+  float z = SGVec_Get_Lane(world_db->players[id].self.origin.z, 0);
+  float y = SGVec_Get_Lane(world_db->players[id].self.origin.y, 0);
+  float x = SGVec_Get_Lane(world_db->players[id].self.origin.x, 0);
+
+  world_db->players[id].chunk_id += ((z >= CHUNK_SIZE) - (z < 0.)) * (1 << CHUNK_POW * 2);
+  world_db->players[id].chunk_id += ((y >= CHUNK_SIZE) - (y < 0.)) * (1 << CHUNK_POW);
+  world_db->players[id].chunk_id += ((x >= CHUNK_SIZE) - (x < 0.)) * (1);
+  // world_db->players[id].self.float_origin = (float3D_t) {
+  //   .x = world_db->players[id].self.float_origin.x + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.x, 0)),
+  //   .y = world_db->players[id].self.float_origin.y + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.y, 0)),
+  //   .z = world_db->players[id].self.float_origin.z + (amt * SGVec_Get_Lane(world_db->players[id].self.ship.orientation.forward.z, 0))
+  // };
+  // point_to_chunk_id(world_db->players[id].self.float_origin, &(world_db->players[id].chunk_id), &(world_db->players[id].chunk_origin));
   MTX_UNLOCK(world_db->player_mtxs + id);
 }
 void request_yaw(unsigned int id, float amt) {

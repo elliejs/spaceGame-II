@@ -14,13 +14,12 @@ orientation_t;
 typedef
 struct ship_s {
   orientation_t orientation;
-  SGVec SGVec_radius;
-  float float_radius;
+  // float float_radius;
 }
 ship_t;
 
 #include "../object.h"
 
-object_t create_ship(float3D_t origin);
+object_t create_ship(SGVec3D_t origin);
 
 #endif /* end of include guard: SHIP_H */

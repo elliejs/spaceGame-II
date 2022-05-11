@@ -11,11 +11,12 @@ typedef struct object_s object_t;
 #include "../color/oklab.h"
 
 struct object_s {
-  SGVec (*SGVec_distance)(struct object_s *, SGVec3D_t);
-  float3D_t (*float_normal)(struct object_s *, float3D_t);
-  oklab_t (*get_color)(struct object_s *, float3D_t);
-  SGVec3D_t SGVec_origin;
-  float3D_t float_origin;
+  SGVec (*distance)(struct object_s *, SGVec3D_t);
+  SGVec3D_t (*normal)(struct object_s *, SGVec3D_t);
+  SGVecOKLAB_t (*color)(struct object_s *, SGVec3D_t);
+  SGVec3D_t origin;
+  SGVec radius;
+  // float3D_t float_origin;
 
   union {
     planet_t planet;
@@ -36,16 +37,16 @@ SGVec SGVec_smooth_max(SGVec a, SGVec b, float k) {
   return SGVec_Add_SGVec(SGVec_Maximum(a, b), SGVec_Mult_Float(SGVec_Mult_Float(SGVec_Mult_SGVec(SGVec_Mult_SGVec(h,h),h),k),1.0/6.0));
 }
 
-inline
-float float_smooth_min(float a, float b, float k) {
-  float h = fmax(k - fabs(a - b), 0.) / k;
-  return fmin(a, b) - h * h * h * k * (1.0/6.0);
-}
-
-inline
-float float_smooth_max(float a, float b, float k) {
-  float h = fmax(k - fabs(a - b), 0.) / k;
-  return fmax(a, b) + h * h * h * k * (1.0/6.0);
-}
+// inline
+// float float_smooth_min(float a, float b, float k) {
+//   float h = fmax(k - fabs(a - b), 0.) / k;
+//   return fmin(a, b) - h * h * h * k * (1.0/6.0);
+// }
+//
+// inline
+// float float_smooth_max(float a, float b, float k) {
+//   float h = fmax(k - fabs(a - b), 0.) / k;
+//   return fmax(a, b) + h * h * h * k * (1.0/6.0);
+// }
 
 #endif /* end of include guard: OBJECT_H */
