@@ -1,5 +1,5 @@
-#ifndef WORLD_DB_H
-#define WORLD_DB_H
+#ifndef WORLD_SERVER_H
+#define WORLD_SERVER_H
 
 #include "../math/vector_3d.h"
 #include "../utils/semaphore.h"
@@ -10,15 +10,16 @@
 
 #define CUBE_NUM 27
 
-#define CHUNK_POW 6
+#define CHUNK_POW 10
 #define CHUNK_SIZE (1 << CHUNK_POW)
 
-// typedef
-// struct fast_list_s {
-//   unsigned int num;
-//   unsigned void * data;
-// }
-// fast_list_t;
+extern SGVec3D_t chunk_offsets[CUBE_NUM];
+
+#define CHUNK_ORIGIN_ID (chunk_id_t) { \
+  .x = 0, \
+  .y = 0, \
+  .z = 0  \
+}
 
 #define FAST_LIST_T(T, MAX)                   \
   struct {                                    \
@@ -58,15 +59,14 @@ chunk_id_t;
 typedef
 struct world_snapshot_s {
   // unsigned long time;
-  chunk_t * chunks[CUBE_NUM + 1];
-  chunk_t ship_chunk;
-
+  chunk_t * chunks[2 * CUBE_NUM];
+  chunk_t ship_chunks[CUBE_NUM];
   object_t * self;
 }
 world_snapshot_t;
 
 typedef
-struct world_db_s {
+struct world_server_s {
   // unsigned long time;
   // pthread_mutex_t time_mtx;
 
@@ -80,10 +80,10 @@ struct world_db_s {
   } players[MAX_CLIENTS];
   FAST_LIST_T(chunk_t, MAX_CLIENTS * CUBE_NUM) chunk_cache;
 }
-world_db_t;
+world_server_t;
 
-void start_world_db();
-void end_world_db();
+void start_world_server();
+void end_world_server();
 
 world_snapshot_t request_snapshot(unsigned int id);
 
@@ -97,4 +97,4 @@ void request_yaw(unsigned int id, float amt);
 void request_pitch(unsigned int id, float amt);
 void request_roll(unsigned int id, float amt);
 
-#endif /* end of include guard: WORLD_DB_H */
+#endif /* end of include guard: WORLD_SERVER_H */

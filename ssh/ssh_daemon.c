@@ -11,22 +11,22 @@
 
 #include "ssh_daemon.h"
 #include "../render/render_daemon.h"
-#include "../world_db/world_db.h"
+#include "../world/world_server.h"
 
 static
-ssh_client_t * get_available_ssh_client_slot(ssh_db_t * ssh_db) {
+ssh_client_t * get_available_ssh_client_slot(ssh_server_t * ssh_server) {
   for(unsigned int i = 0; i < MAX_CLIENTS; i++) {
-    if (atomic_load(ssh_db->active + i) == false) {
-      if(ssh_db->slots[i].pid) {
+    if (atomic_load(ssh_server->active + i) == false) {
+      if(ssh_server->slots[i].pid) {
         int status;
-        waitpid(ssh_db->slots[i].pid, &status, 0);
+        waitpid(ssh_server->slots[i].pid, &status, 0);
         if(WIFEXITED(status)) {
           printf("[ssh_server]: ssh_client %u exited with %s\n", i, WEXITSTATUS(status) == EXIT_SUCCESS ? "SUCCESS" : "FAILURE");
         } else {
           printf("[ssh_server]: Warning. ssh_client %u terminated outside of a normal exit route.\n", i);
         }
       }
-      return ssh_db->slots + i;
+      return ssh_server->slots + i;
     }
   }
   return NULL;
@@ -43,7 +43,7 @@ void reset_ssh_client(ssh_client_t * ssh_client) {
   printf("[ssh_client %u]: reset: renderer\n", ssh_client->id);
   end_render_daemon();
 
-  printf("[ssh_client %u]: reset: remove player from world_db\n", ssh_client->id);
+  printf("[ssh_client %u]: reset: remove player from world_server\n", ssh_client->id);
   request_player_end(ssh_client->id);
 
   printf("[ssh_client %u]: reset: channel\n", ssh_client->id);
@@ -117,14 +117,14 @@ int ssh_client_task(ssh_client_t * ssh_client) {
 void ssh_daemon(void) {
   // signal(SIGCHLD, SIG_IGN);
 
-  ssh_db_t * ssh_db = (ssh_db_t *) mmap(NULL, sizeof(ssh_db_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+  ssh_server_t * ssh_server = (ssh_server_t *) mmap(NULL, sizeof(ssh_server_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
   for(size_t i = 0; i < MAX_CLIENTS; i++) {
-    ssh_client_t * this_slot = ssh_db->slots + i;
+    ssh_client_t * this_slot = ssh_server->slots + i;
     *this_slot = (ssh_client_t) {
       .id = i,
       .pid = 0,
-      .active = ssh_db->active + i,
+      .active = ssh_server->active + i,
       .pleaseKill = false,
 
       .pre_channel = true,
@@ -144,7 +144,7 @@ void ssh_daemon(void) {
     this_slot->ssh_client_session_callbacks.userdata = (void *) this_slot;
     ssh_callbacks_init(&(this_slot->ssh_client_session_callbacks));
 
-    ssh_db->slots[i].ssh_client_channel_callbacks.userdata = (void *) this_slot;
+    ssh_server->slots[i].ssh_client_channel_callbacks.userdata = (void *) this_slot;
     ssh_callbacks_init(&(this_slot->ssh_client_channel_callbacks));
   }
 
@@ -188,7 +188,7 @@ void ssh_daemon(void) {
   };
 
   for(;;) {
-    ssh_client_t * ssh_client = get_available_ssh_client_slot(ssh_db);
+    ssh_client_t * ssh_client = get_available_ssh_client_slot(ssh_server);
 
     if(!ssh_client) {
       printf("no ssh_clients available to connect to, try again later\n");
@@ -221,5 +221,5 @@ void ssh_daemon(void) {
 
   ssh_bind_free(bind);
   ssh_finalize();
-  munmap(ssh_db, sizeof(ssh_db_t));
+  munmap(ssh_server, sizeof(ssh_server_t));
 }

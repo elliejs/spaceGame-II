@@ -10,11 +10,11 @@
 #define BINDPORT "2222"
 #define KEYS_FOLDER "ssh/keys/"
 
-typedef struct ssh_db_s {
+typedef struct ssh_server_s {
   ssh_client_t slots[MAX_CLIENTS];
   atomic_bool active[MAX_CLIENTS];
 }
-ssh_db_t;
+ssh_server_t;
 
 void ssh_daemon(void);
 

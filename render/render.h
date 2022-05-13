@@ -2,7 +2,7 @@
 #define RENDER_H
 
 #include "../math/vector_3d.h"
-#include "../world_db/world_db.h"
+#include "../world/world_server.h"
 #define FOV 45
 
 typedef

@@ -9,7 +9,7 @@
 #include "../math/vector_3d.h"
 #include "../utils/semaphore.h"
 #include "../nblessings/nblessings.h"
-#include "../world_db/world_db.h"
+#include "../world/world_server.h"
 #include "render.h"
 #include "render_daemon.h"
 #include "../color/palette_helper.h"

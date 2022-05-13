@@ -11,9 +11,9 @@ typedef struct object_s object_t;
 #include "../color/oklab.h"
 
 struct object_s {
-  SGVec (*distance)(struct object_s *, SGVec3D_t);
-  SGVec3D_t (*normal)(struct object_s *, SGVec3D_t);
-  SGVecOKLAB_t (*color)(struct object_s *, SGVec3D_t);
+  SGVec (*distance)(struct object_s *, SGVec3D_t, int chunk_idx);
+  SGVec3D_t (*normal)(struct object_s *, SGVec3D_t, int chunk_idx);
+  SGVecOKLAB_t (*color)(struct object_s *, SGVec3D_t, int chunk_idx);
   SGVec3D_t origin;
   SGVec radius;
   // float3D_t float_origin;
@@ -24,6 +24,8 @@ struct object_s {
     star_t star;
   };
 };
+
+#include "../world/world_server.h"
 
 inline
 SGVec SGVec_smooth_min(SGVec a, SGVec b, float k) {

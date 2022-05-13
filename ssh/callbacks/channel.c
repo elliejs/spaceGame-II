@@ -5,7 +5,7 @@
 #include "channel.h"
 #include "../ssh_client.h"
 
-#include "../../world_db/world_db.h"
+#include "../../world/world_server.h"
 #include "../../render/render_daemon.h"
 
 // ssh_channel_data_callback
