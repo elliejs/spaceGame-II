@@ -48,6 +48,14 @@ struct chunk_s {
 chunk_t;
 
 typedef
+struct chunk_id_s {
+  int x;
+  int y;
+  int z;
+}
+chunk_id_t;
+
+typedef
 struct world_snapshot_s {
   // unsigned long time;
   chunk_t * chunks[CUBE_NUM + 1];
@@ -68,7 +76,7 @@ struct world_db_s {
   pthread_mutex_t player_mtxs[MAX_CLIENTS];
   struct {
     object_t self;
-    unsigned int chunk_id;
+    chunk_id_t chunk_id;
   } players[MAX_CLIENTS];
   FAST_LIST_T(chunk_t, MAX_CLIENTS * CUBE_NUM) chunk_cache;
 }
