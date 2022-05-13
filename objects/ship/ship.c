@@ -23,7 +23,8 @@ SGVecOKLAB_t color(object_t * self, SGVec3D_t point) {
   };
 }
 
-#define DEFAULT_ORIENTATION (orientation_t) { \
+#define DEFAULT_ORIENTATION \
+(orientation_t) { \
   .up = (SGVec3D_t) { \
     .x = SGVec_ZERO, \
     .y = SGVec_ONE, \

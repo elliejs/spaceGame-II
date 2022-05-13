@@ -120,7 +120,6 @@ void * pixel_task(void * nothing) {
     };
     // printf("i\n");
 
-
     render_client.framebuffer[job->y * render_client.width + job->x] = pixel;
     // printf("j\n");
 

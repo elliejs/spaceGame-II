@@ -153,24 +153,24 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
       object_t * light = snapshot->chunks[c]->lights[l];
 
       SGVec3D_t ray_to_light =
-      SGVec3D_normalize(
-        (SGVec3D_t) {
-          .x = SGVec_Sub_SGVec(light->origin.x, march_result.point.x),
-          .y = SGVec_Sub_SGVec(light->origin.y, march_result.point.y),
-          .z = SGVec_Sub_SGVec(light->origin.z, march_result.point.z)
-        }
-      )
-      ;
+        SGVec3D_normalize(
+          (SGVec3D_t) {
+            .x = SGVec_Sub_SGVec(light->origin.x, march_result.point.x),
+            .y = SGVec_Sub_SGVec(light->origin.y, march_result.point.y),
+            .z = SGVec_Sub_SGVec(light->origin.z, march_result.point.z)
+          }
+        );
+
       SGVec alignment =
-      SGVec_Add_Mult_SGVec(
         SGVec_Add_Mult_SGVec(
-          SGVec_Mult_SGVec(normals.x, ray_to_light.x),
-          normals.y,
-          ray_to_light.y
-        ),
-        normals.z,
-        ray_to_light.z
-      );
+          SGVec_Add_Mult_SGVec(
+            SGVec_Mult_SGVec(normals.x, ray_to_light.x),
+            normals.y,
+            ray_to_light.y
+          ),
+          normals.z,
+          ray_to_light.z
+        );
       // printf("alignment: %f %f %f %f\n", SGVec_Get_Lane(alignment, 0), SGVec_Get_Lane(alignment, 1), SGVec_Get_Lane(alignment, 2), SGVec_Get_Lane(alignment, 3));
       SGVecUInt aligned = SGVec_Gtr_Than(alignment, SGVec_ZERO);
       // printf("aligned: %x %x %x %x\n", SGVecUInt_Get_Lane(aligned, 0), SGVecUInt_Get_Lane(aligned, 1), SGVecUInt_Get_Lane(aligned, 2), SGVecUInt_Get_Lane(aligned, 3));

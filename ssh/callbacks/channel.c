@@ -244,7 +244,7 @@ int channel_pty_window_change_callback(ssh_session session, ssh_channel channel,
   printf("\t[ssh_client %u]: pxheight: %d\n", ssh_client->id, pxheight);
   render_daemon_request_dimensions(width, height);
   printf("\t[ssh_client %u]: success\n", ssh_client->id);
-  return 0;
+  return -1;
 }
 
 // ssh_channel_exec_request_callback

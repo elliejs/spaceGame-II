@@ -29,7 +29,7 @@ int SEM_INIT(int N) {
 
 inline
 int SEM_POSTVAL(int S, int N, short V) {
-  struct sembuf postval = {.sem_num = N, .sem_op = V, .sem_flg = 0};
+  struct sembuf postval = {.sem_num = N, .sem_op = (short) V, .sem_flg = 0};
   int R = semop(S, &postval, 1);
   #if defined(SG_DEBUG)
     if (R == -1) perror("[ERROR] SEM POSTVAL");
@@ -39,7 +39,7 @@ int SEM_POSTVAL(int S, int N, short V) {
 
 inline
 int SEM_WAITVAL(int S, int N, short V) {
-  struct sembuf waitval = {.sem_num = N, .sem_op = -V, .sem_flg = 0};
+  struct sembuf waitval = {.sem_num = N, .sem_op = (short) -V, .sem_flg = 0};
   int R = semop(S, &waitval, 1);
   #if defined(SG_DEBUG)
     if (R == -1) perror("[ERROR] SEM WAITVAL");
@@ -49,7 +49,7 @@ int SEM_WAITVAL(int S, int N, short V) {
 
 inline
 int SEM_POST(int S, int N) {
-  struct sembuf postval = {.sem_num = N, .sem_op = 1, .sem_flg = 0};
+  struct sembuf postval = {.sem_num = N, .sem_op = (short) 1, .sem_flg = 0};
   int R = semop(S, &postval, 1);
   #if defined(SG_DEBUG)
     if (R == -1) perror("[ERROR] SEM POST");
@@ -59,7 +59,7 @@ int SEM_POST(int S, int N) {
 
 inline
 int SEM_WAIT(int S, int N) {
-  struct sembuf waitval = {.sem_num = N, .sem_op = -1, .sem_flg = 0};
+  struct sembuf waitval = {.sem_num = N, .sem_op = (short) -1, .sem_flg = 0};
   int R = semop(S, &waitval, 1);
   #if defined(SG_DEBUG)
     if (R == -1) perror("[ERROR] SEM WAIT");
