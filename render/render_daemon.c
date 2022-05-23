@@ -252,9 +252,8 @@ void * render_task(void * data) {
 
     printf("[render_client %u]: blitted\n", id);
     for(int i = 0; i < CUBE_NUM; i++) {
-      free(render_client.snapshot.chunks[i]->objects);
-      free(render_client.snapshot.chunks[i]->lights);
-      free(render_client.snapshot.chunks[i]); //TESTING ONLY
+      free(render_client.snapshot.ship_chunks[i].objects);
+      free(render_client.snapshot.ship_chunks[i].lights);
     }
     // free(render_client.snapshot.chunks[CUBE_NUM]->objects);
     // free(render_client.snapshot.chunks[CUBE_NUM]->lights);

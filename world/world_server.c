@@ -4,21 +4,14 @@
 
 #include "world_server.h"
 
-static
 world_server_t * world_server = NULL;
 SGVec3D_t chunk_offsets[CUBE_NUM];
 
 void start_world_server() {
   if (world_server != NULL) {
-    printf("WORLD_server: Already instantiated, not double-mallocing\n");
+    printf("[world_server]: Already instantiated, not double-mallocing\n");
     return;
   }
-
-  world_server = (world_server_t *) mmap(NULL, sizeof(world_server_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-  MTX_INIT(&(world_server->active_ids_mtx));
-  for (int i = 0; i < MAX_CLIENTS; i++) MTX_INIT(world_server->player_mtxs + i);
-  world_server->active_ids.num = 0;
-  world_server->chunk_cache.num = 0;
 
   int i = 0;
   for(int x = -1; x <= 1; x++) {
@@ -32,6 +25,12 @@ void start_world_server() {
       }
     }
   }
+
+  world_server = (world_server_t *) mmap(NULL, sizeof(world_server_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+  start_world_db(&(world_server->world_db));
+  MTX_INIT(&(world_server->active_ids_mtx));
+  for (int i = 0; i < MAX_CLIENTS; i++) MTX_INIT(world_server->player_mtxs + i);
+  world_server->active_ids.num = 0;
 }
 
 void request_player(unsigned int id) {
@@ -61,23 +60,17 @@ void request_player_end(unsigned int id) {
 void end_world_server() {
   MTX_DESTROY(&(world_server->active_ids_mtx));
   for (int i = 0; i < MAX_CLIENTS; i++) MTX_DESTROY(world_server->player_mtxs + i);
+  end_world_db(&(world_server->world_db));
   munmap(world_server, sizeof(world_server_t));
 }
-//
-// bool chunk_ids_contains(unsigned int * container, unsigned int x) {
-//   for (int i = 0; i < CUBE_NUM; i++) {
-//     if (container[i] == x) return true;
-//   }
-//   return false;
-// }
 
 bool in_neighborhood(chunk_id_t a, chunk_id_t b) {
   return
-  (-1 <= (a.x - b.x) && (a.x - b.x) <= 1)
+  (0 <= (a.x - b.x + 1) && (a.x - b.x + 1) <= 2)
   &&
-  (-1 <= (a.y - b.y) && (a.y - b.y) <= 1)
+  (0 <= (a.y - b.y + 1) && (a.y - b.y + 1) <= 2)
   &&
-  (-1 <= (a.z - b.z) && (a.z - b.z) <= 1)
+  (0 <= (a.z - b.z + 1) && (a.z - b.z + 1) <= 2)
   ;
 }
 
@@ -112,47 +105,50 @@ world_snapshot_t request_snapshot(unsigned int id) {
     MTX_LOCK(world_server->player_mtxs + iter_id);
     chunk_id_t ship_chunk_id = world_server->players[iter_id].chunk_id;
     if (in_neighborhood(current_chunk_id, ship_chunk_id)) {
-      int chunk_idx = 13 + (1 * ship_chunk_id.x + 3 * ship_chunk_id.y + 9 * ship_chunk_id.z);
+      int ship_chunk_idx = 13 + (1 * ship_chunk_id.x + 3 * ship_chunk_id.y + 9 * ship_chunk_id.z);
 
       if (iter_id == id) {
-        snapshot.self = snapshot.ship_chunks[chunk_idx].objects + snapshot.ship_chunks[chunk_idx].num_objects;
+        snapshot.self = snapshot.ship_chunks[ship_chunk_idx].objects + snapshot.ship_chunks[ship_chunk_idx].num_objects;
       }
-      snapshot.ship_chunks[chunk_idx].objects[snapshot.ship_chunks[chunk_idx].num_objects++] = world_server->players[iter_id].self;
+      snapshot.ship_chunks[ship_chunk_idx].objects[snapshot.ship_chunks[ship_chunk_idx].num_objects++] = world_server->players[iter_id].self;
     }
     MTX_UNLOCK(world_server->player_mtxs + iter_id);
   }
   MTX_UNLOCK(&(world_server->active_ids_mtx));
-  //REMOVE LATER TESTING ONLY
-  for (int i = 1; i < CUBE_NUM; i++) {
-    snapshot.chunks[i] = malloc(1 * sizeof(chunk_t));
-    *(snapshot.chunks[i]) = (chunk_t) {
-      .num_objects = 0,
-      .objects = malloc(0 * sizeof(object_t)),
-      .num_lights = 0,
-      .lights = malloc(0 * sizeof(object_t *))
-    };
-  }
 
-  snapshot.chunks[0] = malloc(1 * sizeof(chunk_t));
-  *(snapshot.chunks[0]) = (chunk_t) {
-    .num_objects = 2,
-    .objects = malloc(2 * sizeof(object_t)),
+  gather_chunks(snapshot.chunks, current_chunk_id);
 
-    .num_lights = 1,
-    .lights = malloc(1 * sizeof(object_t *))
-  };
-
-  snapshot.chunks[0]->objects[0] = create_planet((SGVec3D_t) {
-    .x = SGVec_Load_Const(20.),
-    .y = SGVec_Load_Const(20.),
-    .z = SGVec_Load_Const(100.)
-  }, SGVec_Load_Const(50.));
-  snapshot.chunks[0]->objects[1] = create_star((SGVec3D_t) {
-    .x = SGVec_Load_Const(100),
-    .y = SGVec_Load_Const(100),
-    .z = SGVec_Load_Const(50.),
-  }, SGVec_Load_Const(50.));
-  snapshot.chunks[0]->lights[0] = snapshot.chunks[0]->objects + 1;
+  // //REMOVE LATER TESTING ONLY
+  // for (int i = 1; i < CUBE_NUM; i++) {
+  //   snapshot.chunks[i] = malloc(1 * sizeof(chunk_t));
+  //   *(snapshot.chunks[i]) = (chunk_t) {
+  //     .num_objects = 0,
+  //     .objects = malloc(0 * sizeof(object_t)),
+  //     .num_lights = 0,
+  //     .lights = malloc(0 * sizeof(object_t *))
+  //   };
+  // }
+  //
+  // snapshot.chunks[0] = malloc(1 * sizeof(chunk_t));
+  // *(snapshot.chunks[0]) = (chunk_t) {
+  //   .num_objects = 2,
+  //   .objects = malloc(2 * sizeof(object_t)),
+  //
+  //   .num_lights = 1,
+  //   .lights = malloc(1 * sizeof(object_t *))
+  // };
+  //
+  // snapshot.chunks[0]->objects[0] = create_planet((SGVec3D_t) {
+  //   .x = SGVec_Load_Const(20.),
+  //   .y = SGVec_Load_Const(20.),
+  //   .z = SGVec_Load_Const(100.)
+  // }, SGVec_Load_Const(50.));
+  // snapshot.chunks[0]->objects[1] = create_star((SGVec3D_t) {
+  //   .x = SGVec_Load_Const(100),
+  //   .y = SGVec_Load_Const(100),
+  //   .z = SGVec_Load_Const(50.),
+  // }, SGVec_Load_Const(50.));
+  // snapshot.chunks[0]->lights[0] = snapshot.chunks[0]->objects + 1;
 
   return snapshot;
 }

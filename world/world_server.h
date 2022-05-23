@@ -15,11 +15,12 @@
 
 extern SGVec3D_t chunk_offsets[CUBE_NUM];
 
-#define CHUNK_ORIGIN_ID (chunk_id_t) { \
-  .x = 0, \
-  .y = 0, \
-  .z = 0  \
-}
+#define CHUNK_ORIGIN_ID \
+  (chunk_id_t) { \
+    .x = 0, \
+    .y = 0, \
+    .z = 0  \
+  }
 
 #define FAST_LIST_T(T, MAX)                   \
   struct {                                    \
@@ -50,9 +51,9 @@ chunk_t;
 
 typedef
 struct chunk_id_s {
-  int x;
-  int y;
-  int z;
+  unsigned int x;
+  unsigned int y;
+  unsigned int z;
 }
 chunk_id_t;
 
@@ -64,6 +65,16 @@ struct world_snapshot_s {
   object_t * self;
 }
 world_snapshot_t;
+
+#define DEFAULT_CHUNK \
+  (chunk_t) { \
+    .num_objects = 0, \
+    .objects = malloc(0 * sizeof(object_t)), \
+    .num_lights = 0, \
+    .lights = malloc(0 * sizeof(object_t *)) \
+  }
+
+#include "world_db.h"
 
 typedef
 struct world_server_s {
@@ -78,7 +89,8 @@ struct world_server_s {
     object_t self;
     chunk_id_t chunk_id;
   } players[MAX_CLIENTS];
-  FAST_LIST_T(chunk_t, MAX_CLIENTS * CUBE_NUM) chunk_cache;
+
+  world_db_t world_db;
 }
 world_server_t;
 
@@ -96,5 +108,7 @@ void request_thrust(unsigned int id, float amt);
 void request_yaw(unsigned int id, float amt);
 void request_pitch(unsigned int id, float amt);
 void request_roll(unsigned int id, float amt);
+
+extern world_server_t * world_server;
 
 #endif /* end of include guard: WORLD_SERVER_H */

@@ -1,0 +1,36 @@
+#ifndef WORLD_DB_H
+#define WORLD_DB_H
+
+// DO NOT INCLUDE THIS HEADER IN A SOURCE FILE. IT WILL CRASH. INCLUDE world_server.h [THAT INCLUDES THIS HEADER]
+
+#include "../math/aa_tree.h"
+
+#define CACHE_LEN (MAX_CLIENTS * CUBE_NUM)
+
+typedef
+struct cache_item_s {
+  struct cache_item_s * prev;
+  chunk_t data;
+  unsigned int encoded_id;
+  struct cache_item_s * next;
+}
+cache_item_t;
+
+typedef
+struct world_db_s {
+  cache_item_t backing_data[CACHE_LEN];
+  cache_item_t * head;
+  cache_item_t * tail;
+  aa_tree_t search_tree;
+
+  pthread_mutex_t db_mtx;
+}
+world_db_t;
+
+#include "world_server.h"
+
+void gather_chunks(chunk_t ** chunk_storage, chunk_id_t chunk_id);
+void start_world_db(world_db_t * world_db);
+void end_world_db(world_db_t * world_db);
+
+#endif /* end of include guard: WORLD_DB_H */
