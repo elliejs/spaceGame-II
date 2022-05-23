@@ -34,7 +34,8 @@ SGVecOKLAB_t color(object_t * self, SGVec3D_t point, int chunk_idx) {
 
 SGVecOKLAB_t radiance(star_t * self, SGVec dists) {
   return (SGVecOKLAB_t) {
-    .l = SGVec_Load_Const(1.), //SGVec_Mult_SGVec(SGVec_Load_Const(1000.), SGVec_Reciprocal(SGVec_Mult_SGVec(dists, dists))),
+    // .l = SGVec_Load_Const(0.4),
+    .l = SGVec_Mult_SGVec(SGVec_Load_Const(1000.), SGVec_Reciprocal(SGVec_Mult_SGVec(dists, dists))),
     .a = SGVec_Load_Const(0.),
     .b = SGVec_Load_Const(0.)
   };
