@@ -10,6 +10,9 @@
 
 #define CUBE_NUM 27
 
+#define MAX_OBJECTS 100
+#define MAX_LIGHTS  5
+
 #define CHUNK_POW 10
 #define CHUNK_SIZE (1 << CHUNK_POW)
 
@@ -66,14 +69,6 @@ struct world_snapshot_s {
 }
 world_snapshot_t;
 
-#define DEFAULT_CHUNK \
-  (chunk_t) { \
-    .num_objects = 0, \
-    .objects = malloc(0 * sizeof(object_t)), \
-    .num_lights = 0, \
-    .lights = malloc(0 * sizeof(object_t *)) \
-  }
-
 #include "world_db.h"
 
 typedef
@@ -103,11 +98,6 @@ void request_player(unsigned int id);
 void request_player_end(unsigned int id);
 
 void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin);
-
-void request_thrust(unsigned int id, float amt);
-void request_yaw(unsigned int id, float amt);
-void request_pitch(unsigned int id, float amt);
-void request_roll(unsigned int id, float amt);
 
 extern world_server_t * world_server;
 

@@ -2,23 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static
-aa_node_t nil = (aa_node_t) {
-  .left = &nil,
-  .right = &nil,
-  .data = NULL,
-  .level = 0
-};
-
-#define NIL &nil
-
-aa_tree_t create_tree(compare_t (*comparator) (void * a, void * b)) {
-  return (aa_tree_t) {
-    .comparator = comparator,
-    .root = NIL
-  };
-}
-
 aa_node_t * skew(aa_node_t * tree) {
   if (tree->level == tree->left->level) {
     aa_node_t * left = tree->left;
@@ -40,54 +23,15 @@ aa_node_t * split(aa_node_t * tree) {
   return tree;
 }
 
-static
-aa_node_t * insert_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * node, void * data, aa_node_t ** match) {
-  if (node == NIL) {
-    node = malloc(sizeof(aa_node_t));
-    *node = (aa_node_t) {
-      .left = NIL,
-      .right = NIL,
-      .data = data,
-      .level = 1
-    };
-  }
-
-  switch (comparator(data, node->data)) {
-    case LT:
-      ;
-      node->left = insert_helper(comparator, node->left, data, match);
-      break;
-
-    case GT:
-      ;
-      node->right = insert_helper(comparator, node->right, data, match);
-      break;
-
-    default:
-    case EQ:
-      ;
-      *match = node;
-      break;
-  }
-
-  return split(skew(node));
-}
-
-aa_node_t * find_or_insert(aa_tree_t * tree, void * data) {
-  aa_node_t * res;
-  tree->root = insert_helper(tree->comparator, tree->root, data, &res);
-  return res;
-}
-
-aa_node_t * successor(aa_node_t * node) {
+aa_node_t * successor(aa_node_t * node, aa_node_t * nil) {
   node = node->right;
-  while (node->left != NIL) node = node->left;
+  while (node->left != nil) node = node->left;
   return node;
 }
 
-aa_node_t * predecessor(aa_node_t * node) {
+aa_node_t * predecessor(aa_node_t * node, aa_node_t * nil) {
   node = node->left;
-  while (node->right != NIL) node = node->right;
+  while (node->right != nil) node = node->right;
   return node;
 }
 
@@ -105,33 +49,96 @@ aa_node_t * decrease_level(aa_node_t * node) {
    return node;
 }
 
-aa_node_t * delete_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * node, void * data) {
-  if (node == NIL) return NIL;
+static
+bool find_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * nil, aa_node_t * node, void * data, aa_node_t ** match) {
+  if (node == nil) return false;
   switch (comparator(data, node->data)) {
     case LT:
       ;
-      node->left = delete_helper(comparator, node->left, data);
+      return find_helper(comparator, nil, node->left, data, match);
       break;
 
     case GT:
       ;
-      node->right = delete_helper(comparator, node->right, data);
+      return find_helper(comparator, nil, node->right, data, match);
       break;
 
     default:
     case EQ:
-      if (node->left == NIL && node->right == NIL) {
+      *match = node;
+      return true;
+  }
+}
+
+bool find(aa_tree_t * tree, void * data, aa_node_t ** match) {
+  return find_helper(tree->comparator, &(tree->nil), tree->root, data, match);
+}
+
+static
+aa_node_t * insert_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * nil, aa_node_t * node, void * data, aa_node_t * to) {
+  if (node == nil) {
+    *to = (aa_node_t) {
+      .left = nil,
+      .right = nil,
+      .data = data,
+      .level = 1
+    };
+    node = to;
+    return split(skew(node));
+  }
+
+  switch (comparator(data, node->data)) {
+    case LT:
+      ;
+      node->left = insert_helper(comparator, nil, node->left, data, to);
+      break;
+
+    case GT:
+      ;
+      node->right = insert_helper(comparator, nil, node->right, data, to);
+      break;
+
+    default:
+    case EQ:
+      ;
+      printf("[aa_tree] [ANGRY]: Inserting a node which exists in the tree\n");
+  }
+  return split(skew(node));
+}
+
+void insert(aa_tree_t * tree, void * data, aa_node_t * to) {
+  tree->root = insert_helper(tree->comparator, &(tree->nil), tree->root, data, to);
+}
+
+static
+aa_node_t * delete_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * nil, aa_node_t * node, void * data) {
+  if (node == nil) return nil;
+  switch (comparator(data, node->data)) {
+    case LT:
+      ;
+      node->left = delete_helper(comparator, nil, node->left, data);
+      break;
+
+    case GT:
+      ;
+      node->right = delete_helper(comparator, nil, node->right, data);
+      break;
+
+    default:
+    case EQ:
+      if (node->left == nil && node->right == nil) {
+        // printf("free(node)\n");
         free(node);
-        return NIL;
+        return nil;
       }
-      else if (node->left == NIL) {
-        aa_node_t * succ = successor(node);
+      else if (node->left == nil) {
+        aa_node_t * succ = successor(node, nil);
         node->data = succ->data;
-        node->right = delete_helper(comparator, node->right, succ->data);
+        node->right = delete_helper(comparator, nil, node->right, succ->data);
       } else {
-        aa_node_t * pred = predecessor(node);
+        aa_node_t * pred = predecessor(node, nil);
         node->data = pred->data;
-        node->left = delete_helper(comparator, node->left, pred->data);
+        node->left = delete_helper(comparator, nil, node->left, pred->data);
       }
       break;
   }
@@ -145,5 +152,5 @@ aa_node_t * delete_helper(compare_t (* comparator) (void * a, void * b), aa_node
 }
 
 void delete(aa_tree_t * tree, void * data) {
-  tree->root = delete_helper(tree->comparator, tree->root, data);
+  tree->root = delete_helper(tree->comparator, &(tree->nil), tree->root, data);
 }

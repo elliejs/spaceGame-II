@@ -5,6 +5,7 @@
 #include "channel.h"
 #include "../ssh_client.h"
 
+#include "../../world/world_control.h"
 #include "../../world/world_server.h"
 #include "../../render/render_daemon.h"
 
@@ -23,6 +24,7 @@
 int channel_data_callback(ssh_session session, ssh_channel channel, void *data, uint32_t len, int is_stderr, void *userdata) {
   ssh_client_t * ssh_client = (ssh_client_t *) userdata;
   unsigned char * char_data = (unsigned char *) data;
+
   printf("[ssh_client %u]: %s\n", ssh_client->id, "channel_data_callback");
   printf("\t[ssh_client %u]: len: %d\n", ssh_client->id, len);
   printf("\t[ssh_client %u]: data: ", ssh_client->id);
@@ -43,7 +45,7 @@ int channel_data_callback(ssh_session session, ssh_channel channel, void *data, 
       ssh_client->pleaseKill = true;
       break;
     case 0x77: //w
-      request_thrust(ssh_client->id, 0.2);
+      request_thrust(ssh_client->id, 5.0);
       break;
 
     case 0x73: //s
@@ -172,11 +174,10 @@ int channel_pty_request_callback(ssh_session session, ssh_channel channel, const
   printf("\t[ssh_client %u]: pxwidth: %d\n", ssh_client->id, pxwidth);
   printf("\t[ssh_client %u]: pxheight: %d\n", ssh_client->id, pxheight);
 
-  printf("\t[ssh_client %u]: pty request successful.\n", ssh_client->id);
-
   request_player(ssh_client->id);
   render_daemon(width, height, 256, ssh_client->channel, ssh_client->id);
 
+  printf("\t[ssh_client %u]: pty request successful.\n", ssh_client->id);
   return 0;
 }
 
@@ -316,8 +317,8 @@ int channel_subsystem_request_callback(ssh_session session, ssh_channel channel,
  */
 int channel_write_wontblock_callback(ssh_session session, ssh_channel channel, size_t bytes, void *userdata) {
   ssh_client_t * ssh_client = (ssh_client_t *) userdata;
-  printf("[ssh_client %u]: %s\n", ssh_client->id, "channel_write_wontblock_callback");
-  printf("\t[ssh_client %u]: bytes: %lu\n", ssh_client->id, bytes);
+  // printf("[ssh_client %u]: %s\n", ssh_client->id, "channel_write_wontblock_callback");
+  // printf("\t[ssh_client %u]: bytes: %lu\n", ssh_client->id, bytes);
 
   return 0;
 }

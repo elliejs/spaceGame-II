@@ -16,15 +16,13 @@ void promote(cache_item_t * item) {
   world_server->world_db.head = item;
 }
 
-chunk_t generate_chunk(unsigned int encoded_id) {
-  chunk_t gen = (chunk_t) {
-    .objects = malloc(2 * sizeof(object_t)),
-    .num_objects = 2,
-    .lights = malloc(1 * sizeof(object_t *)),
-    .num_lights = 1
-  };
+void generate_chunk(unsigned int encoded_id, cache_item_t * item) {
 
-  gen.objects[0] = create_planet(
+
+  item->chunk.num_objects = 2;
+  item->chunk.num_lights = 1;
+
+  item->objects[0] = create_planet(
     (SGVec3D_t) {
       .x = SGVec_Load_Const(20.),
       .y = SGVec_Load_Const(20.),
@@ -32,7 +30,7 @@ chunk_t generate_chunk(unsigned int encoded_id) {
     },
     SGVec_Load_Const(50.)
   );
-  gen.objects[1] = create_star(
+  item->objects[1] = create_star(
     (SGVec3D_t) {
       .x = SGVec_Load_Const(100),
       .y = SGVec_Load_Const(100),
@@ -41,14 +39,12 @@ chunk_t generate_chunk(unsigned int encoded_id) {
     SGVec_Load_Const(50.)
   );
 
-  gen.lights[0] = gen.objects + 1;
-
-  return gen;
+  item->lights[0] = item->objects + 1;
 }
 
 void destroy_chunk(chunk_t * chunk) {
-  free(chunk->objects);
-  free(chunk->lights);
+  chunk->num_objects = 0;
+  chunk->num_lights = 0;
 }
 
 compare_t cache_comparator(void * a, void * b) {
@@ -69,42 +65,66 @@ unsigned int encode_chunk_id(chunk_id_t id) {
 
 chunk_t * gather_chunk(chunk_id_t id) {
   unsigned int encoded_id = encode_chunk_id(id);
-  // printf("\t[world_db]: looking for chunk_id: %u\n", encoded_id);
   cache_item_t dummy = (cache_item_t) {
     .prev = NULL,
     .next = NULL,
     .encoded_id = encoded_id
   };
-
   MTX_LOCK(&(world_server->world_db.db_mtx));
-  aa_node_t * cache_node = find_or_insert(&(world_server->world_db.search_tree), (void *) &dummy);
-  // printf("\t[world_db %u]: searching cache...\n", encoded_id);
+  aa_node_t * cache_node;
+  cache_item_t * item = world_server->world_db.tail;
 
-  cache_item_t * item = (cache_item_t *) cache_node->data;
-  if (!item->prev && !item->next) {
-    // printf("\t[world_db %u]: NOT FOUND! Inserting\n", encoded_id);
-    item = world_server->world_db.tail;
-
-    if(item->encoded_id != encoded_id) {
-      dummy.encoded_id = item->encoded_id;
-      // printf("\t[world_db %u]: deleting from search tree %p\n", encoded_id, item);
-      delete(&(world_server->world_db.search_tree), (void *) &dummy);
+  if (find(&(world_server->world_db.search_tree), (void *) &dummy, &cache_node)) {
+    item = (cache_item_t *) cache_node->data;
+  } else {
+    if (item->instantiated) {
+      delete(&(world_server->world_db.search_tree), (void *) item);
+      destroy_chunk(&(item->chunk));
+    } else {
+      item->instantiated = true;
     }
-    // printf("BBBBBBB\n");
-    // printf("\t[world_db %u]: deleting old chunk at %p\n", encoded_id, item);
-    destroy_chunk(&(item->data));
-    // printf("CCCCCC\n");
-    item->data = generate_chunk(encoded_id);
-    // printf("\t[world_db %u]: generated data in %p\n", encoded_id, item);
     item->encoded_id = encoded_id;
-    cache_node->data = (void *) item;
+    generate_chunk(encoded_id, item);
+    insert(&(world_server->world_db.search_tree), (void *) item, &(item->search_node));
   }
 
   promote(item);
-  // printf("\t[world_db %u]: promoted %p to the head %p\n", encoded_id, item, world_server->world_db.head);
-  MTX_UNLOCK(&(world_server->world_db.db_mtx));
 
-  return &(item->data);
+
+
+
+
+
+
+  // // printf("\t[world_db %u]: searching cache...\n", encoded_id);
+  // printf("%d\n", __LINE__);
+  // cache_item_t * item = (cache_item_t *) cache_node->data;
+  // if (!item->prev && !item->next) {
+  //   // printf("\t[world_db %u]: NOT FOUND! Inserting\n", encoded_id);
+  //   item = world_server->world_db.tail;
+  //   if (item->instantiated) {
+  //     // if(item->encoded_id != encoded_id) {
+  //     dummy.encoded_id = item->encoded_id;
+  //     // printf("\t[world_db %u]: deleting from search tree %p\n", encoded_id, item);
+  //     delete(&(world_server->world_db.search_tree), (void *) &dummy);
+  //     // }
+  //     // printf("BBBBBBB\n");
+  //     // printf("\t[world_db %u]: deleting old chunk at %p\n", encoded_id, item);
+  //     destroy_chunk(&(item->data));
+  //   } else {
+  //     item->instantiated = true;
+  //   }
+  //   // printf("CCCCCC\n");
+  //   item->data = generate_chunk(encoded_id);
+  //   // printf("\t[world_db %u]: generated data in %p\n", encoded_id, item);
+  //   item->encoded_id = encoded_id;
+  //   cache_node->data = (void *) item;
+  // }
+  //
+  // promote(item);
+  // // printf("\t[world_db %u]: promoted %p to the head %p\n", encoded_id, item, world_server->world_db.head);
+  MTX_UNLOCK(&(world_server->world_db.db_mtx));
+  return &(item->chunk);
 }
 
 void gather_chunks(chunk_t ** chunk_storage, chunk_id_t chunk_id) {
@@ -126,20 +146,59 @@ void start_world_db(world_db_t * world_db) {
   MTX_INIT(&(world_db->db_mtx));
 
   world_db->head = world_db->backing_data;
-  world_db->backing_data[0].prev = NULL;
-  world_db->backing_data[0].data = DEFAULT_CHUNK;
-  world_db->backing_data[0].next = world_db->backing_data + 1;
+  world_db->backing_data[0] = (cache_item_t) {
+    .prev = NULL,
+    .chunk = (chunk_t) {
+      .objects = world_db->backing_data[0].objects,
+      .lights = world_db->backing_data[0].lights,
+      .num_objects = 0,
+      .num_lights = 0
+    },
+    .next = world_db->backing_data + 1,
+
+    .instantiated = false
+  };
+
   for(int i = 1; i < CACHE_LEN - 1; i++) {
-    world_db->backing_data[i].prev = world_db->backing_data + i - 1;
-    world_db->backing_data[i].data = DEFAULT_CHUNK;
-    world_db->backing_data[i].next = world_db->backing_data + i + 1;
+    world_db->backing_data[i] = (cache_item_t) {
+      .prev = world_db->backing_data + i - 1,
+      .chunk = (chunk_t) {
+        .objects = world_db->backing_data[i].objects,
+        .lights = world_db->backing_data[i].lights,
+        .num_objects = 0,
+        .num_lights = 0
+      },
+      .next = world_db->backing_data + i + 1,
+
+      .instantiated = false
+    };
   }
-  world_db->backing_data[CACHE_LEN - 1].prev = world_db->backing_data + CACHE_LEN - 2;
-  world_db->backing_data[CACHE_LEN - 1].data = DEFAULT_CHUNK;
-  world_db->backing_data[CACHE_LEN - 1].next = NULL;
+
+  world_db->backing_data[CACHE_LEN - 1] = (cache_item_t) {
+    .prev = world_db->backing_data + CACHE_LEN - 2,
+    .chunk = (chunk_t) {
+      .objects = world_db->backing_data[CACHE_LEN - 1].objects,
+      .lights = world_db->backing_data[CACHE_LEN - 1].lights,
+      .num_objects = 0,
+      .num_lights = 0
+    },
+    .next = NULL,
+
+    .instantiated = false
+  };
   world_db->tail = world_db->backing_data + CACHE_LEN - 1;
 
-  world_db->search_tree = create_tree(cache_comparator);
+  world_db->search_tree = (aa_tree_t) {
+    .comparator = cache_comparator,
+    .nil = (aa_node_t) {
+      .left = &(world_db->search_tree.nil),
+      .right = &(world_db->search_tree.nil),
+      .data = NULL,
+      .level = 0
+    },
+    .root = &(world_db->search_tree.nil)
+  };
+
 }
 
 void end_world_db(world_db_t * world_db) {

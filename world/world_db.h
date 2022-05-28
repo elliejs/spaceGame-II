@@ -10,9 +10,15 @@
 typedef
 struct cache_item_s {
   struct cache_item_s * prev;
-  chunk_t data;
+  chunk_t chunk;
+  object_t objects[MAX_OBJECTS + MAX_LIGHTS];
+  object_t * lights[MAX_LIGHTS];
   unsigned int encoded_id;
   struct cache_item_s * next;
+
+  aa_node_t search_node;
+
+  bool instantiated;
 }
 cache_item_t;
 
