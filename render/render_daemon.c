@@ -89,51 +89,33 @@ static
 void * pixel_task(void * nothing) {
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
   for (;;) {
-    // printf("a\n");
     SEM_WAIT(render_client.job_sem, 0);
-    // printf("b\n");
-    // printf("c\n");
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_testcancel();
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     pixel_job_t * job = NULL;
-    if (render_client.id) printf("X\n");
     MTX_LOCK(&(render_client.job_mtx));
-    if (render_client.id) printf("Y\n");
     job = render_client.pixel_jobs;
     render_client.pixel_jobs = render_client.pixel_jobs->next;
     MTX_UNLOCK(&(render_client.job_mtx));
-    printf("Z\n");
-    // printf("f\n");
 
-    if (!job) {
-      printf("oh shit\n");
-      continue;
-    }
-    printf("g\n");
+    if (!job) continue;
 
     SGVec3D_t rays = create_rays(render_client.snapshot.self->ship.orientation, job->rot_x_sin, job->rot_x_cos, job->rot_y_sin, job->rot_y_cos);
 
     // printf("pixel [y: %.2u, x: %.2u]: fore: %u, back: %u, shape: %u\n", job->y, job->x, pixel.fore, pixel.back, pixel.shape);
-    printf("gg\n");
     raw_pixel_t raw_pixel = rays_to_pixel(rays, &(render_client.snapshot));
-    printf("h\n");
 
     pixel_t pixel = (pixel_t) {
       .fore = closest_color_index(raw_pixel.fore, render_client.colors, render_client.num_colors),
       .back = closest_color_index(raw_pixel.back, render_client.colors, render_client.num_colors),
       .shape = raw_pixel.shape
     };
-    printf("i\n");
 
     render_client.framebuffer[job->y * render_client.width + job->x] = pixel;
-    printf("j\n");
-    // printf("free(job)\n");
     free(job);
-    printf("k\n");
 
     SEM_POST(render_client.job_sem, 1);
-    printf("l\n");
 
   }
   printf("dead\n");
@@ -188,19 +170,15 @@ void enqueue_render() {
         .y = y
       };
 
-      // printf("A\n");
       MTX_LOCK(&(render_client.job_mtx));
-      // printf("B\n");
       job->next = render_client.pixel_jobs;
       render_client.pixel_jobs = job;
       MTX_UNLOCK(&(render_client.job_mtx));
-      // printf("C\n");
       SEM_POST(render_client.job_sem, 0);
       post++;
     }
   }
   // MTX_UNLOCK(&(render_client.job_mtx));
-  printf("enqueued %d pixels\n", post);
 }
 
 #define DEG2RAD(X) (((float) M_PI / (float) 180.) * (float) (X))
@@ -261,9 +239,7 @@ void * render_task(void * nothing) {
 
     printf("[render_client %u]: blitted\n", id);
     for(int i = 0; i < CUBE_NUM; i++) {
-      // printf("free(render_client.snapshot.ship_chunks[%d].objects)\n", i);
       free(render_client.snapshot.ship_chunks[i].objects);
-      // printf("free(render_client.snapshot.ship_chunks[%d].lights)\n", i);
       free(render_client.snapshot.ship_chunks[i].lights);
     }
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -300,7 +276,6 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   //     }, max_colors, render_client.colors, &(render_client.num_colors));
   //   }
   // }
-  printf("init 1/3\n");
   create_gradient(
     (oklab_t) {.l = 1., .a = 0., .b = 0.},
     linear_srgb_to_oklab((rgb_t) {0., 0.5, 0.}),
@@ -313,7 +288,6 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   //   (oklab_t) {.l = 1., .a = 0., .b = 0.},
   //   linear_srgb_to_oklab((rgb_t) {1., 0., 0.}),
   //   20, max_colors, render_client.colors, &(render_client.num_colors), false);
-  printf("init 2/3\n");
   unsigned int header_len;
   unsigned char * header_data = nblessings_header_data(render_client.colors, render_client.num_colors, &header_len);
 
@@ -328,13 +302,9 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   render_client.job_sem = SEM_INIT(2);
   SEM_SETVAL(render_client.job_sem, 0, 0);
   SEM_SETVAL(render_client.job_sem, 1, 0);
-  printf("init 3/3\n");
-  for (int i = 0; i < NUM_THREADS; i++) {
-    pthread_create(render_client.pixel_worker_pids + i, NULL, pixel_task, NULL);
-    printf("pixel_task: %d of %d\n", i, NUM_THREADS);
-  }
+  for (int i = 0; i < NUM_THREADS; i++) pthread_create(render_client.pixel_worker_pids + i, NULL, pixel_task, NULL);
+
   pthread_create(&(render_client.pid), NULL, render_task, NULL);
-  printf("render_task\n");
 
   render_client.active = true;
 }
@@ -344,22 +314,12 @@ void end_render_daemon() {
 
   printf("cancelling main render loop\n");
   pthread_cancel(render_client.pid);
-  printf("cancelled\n");
   pthread_join(render_client.pid, NULL);
-  printf("joined\n");
 
   printf("cancelling all jobs\n");
   for (int i = 0; i < NUM_THREADS; i++) pthread_cancel(render_client.pixel_worker_pids[i]);
-  printf("posting to jobs\n");
-  // SEM_POSTVAL(render_client.job_sem, 0, NUM_THREADS);
   SEM_POSTVAL(render_client.job_sem, 0, render_client.width * render_client.height);
-
-  // MTX_UNLOCK(render_client.job_mtx);
   for (int i = 0; i < NUM_THREADS; i++) pthread_join(render_client.pixel_worker_pids[i], NULL);
-
-  // SEM_POSTVAL(render_client.job_sem, 1, render_client.width * render_client.height);
-  // MTX_UNLOCK(render_client.job_mtx);
-  // while (render_client.pixel_jobs) {}
 
   printf("destroying job_sem\n");
   SEM_DESTROY(render_client.job_sem);
@@ -371,15 +331,6 @@ void end_render_daemon() {
   free(render_client.colors);
   free(render_client.framebuffer);
   free(render_client.stream_buffer);
-
-  //TODO something is wrong here
-  //DONE
-  // while (render_client.pixel_jobs != NULL) {
-  //   printf("%p\n", render_client.pixel_jobs);
-  //   pixel_job_t * job = render_client.pixel_jobs;
-  //   render_client.pixel_jobs = job->next;
-  //   free(job);
-  // }
 
   // TODO
   // unsigned int footer_len;

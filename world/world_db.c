@@ -90,39 +90,6 @@ chunk_t * gather_chunk(chunk_id_t id) {
 
   promote(item);
 
-
-
-
-
-
-
-  // // printf("\t[world_db %u]: searching cache...\n", encoded_id);
-  // printf("%d\n", __LINE__);
-  // cache_item_t * item = (cache_item_t *) cache_node->data;
-  // if (!item->prev && !item->next) {
-  //   // printf("\t[world_db %u]: NOT FOUND! Inserting\n", encoded_id);
-  //   item = world_server->world_db.tail;
-  //   if (item->instantiated) {
-  //     // if(item->encoded_id != encoded_id) {
-  //     dummy.encoded_id = item->encoded_id;
-  //     // printf("\t[world_db %u]: deleting from search tree %p\n", encoded_id, item);
-  //     delete(&(world_server->world_db.search_tree), (void *) &dummy);
-  //     // }
-  //     // printf("BBBBBBB\n");
-  //     // printf("\t[world_db %u]: deleting old chunk at %p\n", encoded_id, item);
-  //     destroy_chunk(&(item->data));
-  //   } else {
-  //     item->instantiated = true;
-  //   }
-  //   // printf("CCCCCC\n");
-  //   item->data = generate_chunk(encoded_id);
-  //   // printf("\t[world_db %u]: generated data in %p\n", encoded_id, item);
-  //   item->encoded_id = encoded_id;
-  //   cache_node->data = (void *) item;
-  // }
-  //
-  // promote(item);
-  // // printf("\t[world_db %u]: promoted %p to the head %p\n", encoded_id, item, world_server->world_db.head);
   MTX_UNLOCK(&(world_server->world_db.db_mtx));
   return &(item->chunk);
 }
