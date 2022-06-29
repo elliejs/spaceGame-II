@@ -317,8 +317,8 @@ int channel_subsystem_request_callback(ssh_session session, ssh_channel channel,
  */
 int channel_write_wontblock_callback(ssh_session session, ssh_channel channel, size_t bytes, void *userdata) {
   ssh_client_t * ssh_client = (ssh_client_t *) userdata;
-  // printf("[ssh_client %u]: %s\n", ssh_client->id, "channel_write_wontblock_callback");
-  // printf("\t[ssh_client %u]: bytes: %lu\n", ssh_client->id, bytes);
+  printf("[ssh_client %u]: %s\n", ssh_client->id, "channel_write_wontblock_callback");
+  printf("\t[ssh_client %u]: bytes: %lu\n", ssh_client->id, bytes);
 
   return 0;
 }
