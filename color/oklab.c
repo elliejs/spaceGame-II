@@ -1,7 +1,7 @@
 #include "oklab.h"
 
 extern inline
-rgb_t normalize_rgb(unsigned int r, unsigned int g, unsigned int b);
+rgb_t normalize_rgb(rgb_t rgb);
 
 extern inline
 rgb_t clamp_denormalize_rgb(rgb_t rgb);

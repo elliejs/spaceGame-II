@@ -50,11 +50,11 @@ float delta_E(oklab_t x, oklab_t y) {
 }
 
 inline
-rgb_t normalize_rgb(unsigned int r, unsigned int g, unsigned int b) {
+rgb_t normalize_rgb(rgb_t rgb) {
   return (rgb_t) {
-    .r = r / (float) 255.,
-    .g = g / (float) 255.,
-    .b = b / (float) 255.
+    .r = rgb.r / (float) 255.,
+    .g = rgb.g / (float) 255.,
+    .b = rgb.b / (float) 255.
   };
 }
 

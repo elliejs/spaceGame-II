@@ -4,6 +4,7 @@
 #include <float.h>
 
 #include "oklab.h"
+#include "palettes/palette.h"
 
 inline
 unsigned int closest_color_index(oklab_t color, oklab_t * colors, unsigned int num_colors) {
