@@ -27,7 +27,7 @@ static
 SGVecOKLAB_t color(object_t * self, SGVec3D_t point, int chunk_idx) {
   return (SGVecOKLAB_t) {
     .l = SGVec_Load_Const(0.),
-    .a = SGVec_Load_Const(0.),
+    .a = SGVec_Load_Const(1.),
     .b = SGVec_Load_Const(0.)
   };
 }
