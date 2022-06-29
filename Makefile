@@ -21,7 +21,7 @@ debug : DEBUG spacegame
 $(OFILES) : %.o: %.c
 			$(CC) -c $< -o $(OBJDIR)/$(notdir $@) $(CFLAGS)
 
-all : clean spaceGame
+all : clean spacegame
 
 clean :
 	rm $(OFILESFLAT)
