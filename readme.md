@@ -1,6 +1,6 @@
 # Codename: SpaceGame II
 
-![https://www.youtube.com/watch?v=ghebc8kRrmA](https://www.youtube.com/watch?v=ghebc8kRrmA)
+![https://www.youtube.com/watch?v=ghebc8kRrmA](blog_material/Codename_SpaceGame_II_Demo.mov)
 
 
 ### Running your own SpaceGame Server
