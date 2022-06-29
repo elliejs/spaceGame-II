@@ -1,16 +1,20 @@
 # Codename: SpaceGame II
 
-
 https://user-images.githubusercontent.com/46575669/176509053-182580f1-dd4f-48f7-85e5-03351e57a98f.mov
 
 
 
-### Running your own SpaceGame Server
+## Running your own SpaceGame Server
 
----
+### Building:
 
-Building:
+There are many build targets available with make.
 
+- **make**: With no args, make creates a medium performance build without cleaning.
+- **all**: Cleans the directory and rebuilds medium performance.
+- **optimized**: Builds at optimization level 3, and with fast-math.
+- **debug**: Builds with debug flags enabled, which add some more server-side print statements.
+- **clean**: removes all object files.
 
 ---
 
