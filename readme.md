@@ -18,15 +18,23 @@ There are many build targets available with make.
 
 ---
 
-Dependencies:
+### Dependencies:
+
 - [libssh](https://www.libssh.org/)
 
 ---
 
+### Running
 
 run the server as: `./spaceGame [optional IPv4 bindaddr]`
 
 run the client as: `ssh jelly@[127.0.0.1 or bindaddr supplied to server] -p 2222`, password is 'toast'
+
+---
+
+### Supported Platforms
+
+- ARMv8 NEON
 
 ---
 
@@ -37,3 +45,4 @@ Requested Features:
 - **[DONE]** ~~runtime bindaddr selection~~
 - **[DONE]** ~~Makefile for ease of building and configuration.~~
   - **[FIX]** [Makefile](Makefile)
+- **[TODO]** Move from SIMD to Vulkan, to make more platforms available
