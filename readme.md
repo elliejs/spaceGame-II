@@ -1,6 +1,8 @@
 # Codename: SpaceGame II
 
-![https://www.youtube.com/watch?v=ghebc8kRrmA](blog_material/Codename_SpaceGame_II_Demo.mov)
+
+https://user-images.githubusercontent.com/46575669/176509053-182580f1-dd4f-48f7-85e5-03351e57a98f.mov
+
 
 
 ### Running your own SpaceGame Server
@@ -16,6 +18,7 @@ Dependencies:
 - [libssh](https://www.libssh.org/)
 
 ---
+
 
 run the server as: `./spaceGame [optional IPv4 bindaddr]`
 
