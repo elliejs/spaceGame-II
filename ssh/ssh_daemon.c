@@ -114,7 +114,7 @@ int ssh_client_task(ssh_client_t * ssh_client) {
   return EXIT_SUCCESS;
 }
 
-void ssh_daemon(void) {
+void ssh_daemon(char const * bindaddr) {
   // signal(SIGCHLD, SIG_IGN);
 
   ssh_server_t * ssh_server = (ssh_server_t *) mmap(NULL, sizeof(ssh_server_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
@@ -164,7 +164,7 @@ void ssh_daemon(void) {
   const int log_level = SSH_LOG_WARNING;
   if(
     ssh_bind_options_set(bind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &log_level)
-    || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDADDR, BINDADDR)
+    || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDADDR, bindaddr ? bindaddr : BINDADDR)
     || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDPORT_STR, BINDPORT)
     || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_RSAKEY,   KEYS_FOLDER "rsa-key")
     || ssh_bind_options_set(bind, SSH_BIND_OPTIONS_ECDSAKEY, KEYS_FOLDER "ecdsa-key")

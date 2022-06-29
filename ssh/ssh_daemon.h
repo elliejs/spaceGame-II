@@ -16,6 +16,6 @@ typedef struct ssh_server_s {
 }
 ssh_server_t;
 
-void ssh_daemon(void);
+void ssh_daemon(char const * bindaddr);
 
 #endif /* end of include guard: SSH_DAEMON_H */
