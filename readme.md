@@ -25,21 +25,15 @@ There are many build targets available with make.
 - **debug**: Builds with debug flags enabled, which add some more server-side print statements.
 - **clean**: removes all object files.
 
----
-
 ### Dependencies:
 
 - [libssh](https://www.libssh.org/)
-
----
 
 ### Running
 
 run the server as: `./spaceGame [optional IPv4 bindaddr]`
 
 run the client as: `ssh jelly@[127.0.0.1 or bindaddr supplied to server] -p 2222`, password is 'toast'
-
----
 
 ### Supported Platforms
 
