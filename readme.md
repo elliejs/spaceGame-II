@@ -37,16 +37,21 @@ There are many build targets available with make.
 
 ### Supported Platforms
 
-- ARMv8 NEON
+- ARMv8 with NEON SIMD
 
 ---
 
-## Requested Features:
+## Feature Roadmap:
 
-- dvorak mapping option
-- **[DONE]** ~~script for server owners to generate required keys~~
+- [ ] **[MOVED]** ~~dvorak mapping option~~
+- [X] ~~script for server owners to generate required keys~~
   - **[FIX]** [keygen.sh](keygen.sh)
-- **[DONE]** ~~runtime bindaddr selection~~
-- **[DONE]** ~~Makefile for ease of building and configuration~~
+- [X] ~~runtime bindaddr selection~~
+- [X] ~~Makefile for ease of building and configuration~~
   - **[FIX]** [Makefile](Makefile)
-- **[TODO]** Move from SIMD to Vulkan, to make more platforms available
+- [ ] ~~Move from SIMD to Vulkan, to make more platforms available~~
+  - **[WONT DO]** Since Vulkan requires so much boilerplate and GPU ray-marching isn't optimizable anyway, this has been forgone in favor of just buying more threads and cpus.
+- [ ] Persistent user profiles.
+  - [ ] user keymaps for Colemak, Dvorak, etc
+  - [ ] save-states for location, health, inventory, etc
+- [ ] Friend sharing and waypointing
