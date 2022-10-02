@@ -1,6 +1,10 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+//OBJECTS MAY NOT USE *ALLOC. THEY ARE STORED IN A SHMEM BLOCK.
+// USING *ALLOC WILL CAUSE ALL OTHER PROCESSES THAN THE ALLOCATOR
+// TO JUMP TO INVALID MEMORY.
+
 typedef struct object_s object_t;
 
 #include "planet/planet.h"
@@ -10,13 +14,14 @@ typedef struct object_s object_t;
 #include "../math/vector_3d.h"
 #include "../color/oklab.h"
 
+typedef SGVec (*dist_func_t)(struct object_s *, SGVec3D_t, int chunk_idx);
+
 struct object_s {
-  SGVec (*distance)(struct object_s *, SGVec3D_t, int chunk_idx);
+  dist_func_t distance;
   SGVec3D_t (*normal)(struct object_s *, SGVec3D_t, int chunk_idx);
   SGVecOKLAB_t (*color)(struct object_s *, SGVec3D_t, int chunk_idx);
   SGVec3D_t origin;
   SGVec radius;
-  // float3D_t float_origin;
 
   union {
     planet_t planet;

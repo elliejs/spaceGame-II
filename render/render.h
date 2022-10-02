@@ -5,6 +5,10 @@
 #include "../world/world_server.h"
 #define FOV 45
 
+#define STEP_MAX 1000
+#define HIT_DIST 0.1
+#define MAX_DIST 2.0 * CHUNK_SIZE
+
 typedef
 struct raw_pixel_s {
   oklab_t fore;

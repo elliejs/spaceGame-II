@@ -13,7 +13,7 @@ SGVec3D_t normal(object_t * self, SGVec3D_t point, int chunk_idx) {
 
 static
 SGVec distance(object_t * self, SGVec3D_t point, int chunk_idx) {
-  return SGVec_Sub_SGVec(
+  SGVec dist = SGVec_Sub_SGVec(
     SGVec3D_distance(
       (SGVec3D_t) {
         SGVec_Add_SGVec(self->origin.x, chunk_offsets[chunk_idx].x),
@@ -23,6 +23,8 @@ SGVec distance(object_t * self, SGVec3D_t point, int chunk_idx) {
       point
     ),
     self->radius);
+
+  return dist;
 }
 
 static

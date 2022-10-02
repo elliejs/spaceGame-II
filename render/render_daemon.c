@@ -140,7 +140,6 @@ void enqueue_render() {
     printf("Alert: Unfinished framebuffer? Jobs remaining\n");
   }
 
-  int post = 0;
   SEM_POSTVAL(render_client.job_sem, 0, NUM_THREADS);
   for (int y = 0; y < render_client.height; y++) {
     const float rot_y = y * render_client.rot_finder_y - render_client.half_fov_y;
@@ -297,10 +296,6 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   // INSTALL COLORS HERE
   install_palette(id, duel, max_colors, render_client.colors, &(render_client.num_colors));
 
-  // create_gradient(
-  //   (oklab_t) {.l = 1., .a = 0., .b = 0.},
-  //   linear_srgb_to_oklab((rgb_t) {1., 0., 0.}),
-  //   20, max_colors, render_client.colors, &(render_client.num_colors), false);
   unsigned int header_len;
   unsigned char * header_data = nblessings_header_data(render_client.colors, render_client.num_colors, &header_len);
 
