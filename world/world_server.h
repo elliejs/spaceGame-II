@@ -4,8 +4,6 @@
 #include "../math/vector_3d.h"
 #include "../utils/semaphore.h"
 
-#include "../objects/object.h"
-
 #define MAX_CLIENTS 256
 
 #define CUBE_NUM 27
@@ -15,6 +13,8 @@
 
 #define CHUNK_POW 10
 #define CHUNK_SIZE (1 << CHUNK_POW)
+
+#include "../objects/object.h"
 
 extern SGVec3D_t chunk_offsets[CUBE_NUM];
 

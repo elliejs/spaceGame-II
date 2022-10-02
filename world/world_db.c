@@ -17,8 +17,6 @@ void promote(cache_item_t * item) {
 }
 
 void generate_chunk(unsigned int encoded_id, cache_item_t * item) {
-
-
   item->chunk.num_objects = 2;
   item->chunk.num_lights = 1;
 
@@ -40,11 +38,6 @@ void generate_chunk(unsigned int encoded_id, cache_item_t * item) {
   );
 
   item->lights[0] = item->objects + 1;
-}
-
-void destroy_chunk(chunk_t * chunk) {
-  chunk->num_objects = 0;
-  chunk->num_lights = 0;
 }
 
 compare_t cache_comparator(void * a, void * b) {
@@ -79,7 +72,6 @@ chunk_t * gather_chunk(chunk_id_t id) {
   } else {
     if (item->instantiated) {
       delete(&(world_server->world_db.search_tree), (void *) item);
-      destroy_chunk(&(item->chunk));
     } else {
       item->instantiated = true;
     }

@@ -1,7 +1,9 @@
+#ifndef WORLD_SERVER_H
+#include "world_server.h"
+#endif
+
 #ifndef WORLD_DB_H
 #define WORLD_DB_H
-
-// DO NOT INCLUDE THIS HEADER IN A SOURCE FILE. IT WILL CRASH. INCLUDE world_server.h [THAT INCLUDES THIS HEADER]
 
 #include "../math/aa_tree.h"
 
