@@ -24,6 +24,7 @@ There are many build targets available with make.
 - **optimized**: Builds at optimization level 3, and with fast-math.
 - **debug**: Builds with debug flags enabled, which add some more server-side print statements.
 - **clean**: removes all object files.
+- **help**: prints all targets
 
 ### Dependencies:
 
@@ -43,7 +44,6 @@ There are many build targets available with make.
 
 ## Feature Roadmap:
 
-- [ ] **[MOVED]** ~~dvorak mapping option~~
 - [X] ~~script for server owners to generate required keys~~
   - **[FIX]** [keygen.sh](keygen.sh)
 - [X] ~~runtime bindaddr selection~~
