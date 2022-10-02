@@ -25,3 +25,6 @@ all : clean spacegame
 
 clean :
 	rm $(OFILESFLAT)
+
+help :
+	@echo	"make :: [optimized, debug, all, clean, shader, help(this message)]"
