@@ -37,6 +37,20 @@ SGVecOKLAB_t;
 #define OKLAB_BLACK (oklab_t) {.l = 0., .a = 0., .b = 0.}
 
 inline
+SGVec SGVecOKLAB_dot(SGVecOKLAB_t a, SGVecOKLAB_t b) {
+  return
+  SGVec_Add_Mult_SGVec(
+    SGVec_Add_Mult_SGVec(
+      SGVec_Mult_SGVec(a.l, b.l),
+      a.a,
+      b.a
+    ),
+    a.b,
+    b.b
+  );
+}
+
+inline
 float delta_E(oklab_t x, oklab_t y) {
   float delta_l = x.l - y.l;
   float c1 = sqrtf(x.a * x.a + x.b * x.b);
