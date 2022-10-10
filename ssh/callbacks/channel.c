@@ -49,7 +49,7 @@ int channel_data_callback(ssh_session session, ssh_channel channel, void *data, 
       break;
 
     case 0x73: //s
-      request_thrust(ssh_client->id, -0.2);
+      request_thrust(ssh_client->id, -5.0);
       break;
 
     case 0x64: //d
