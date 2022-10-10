@@ -93,6 +93,7 @@ void start_world_server();
 void end_world_server();
 
 world_snapshot_t request_snapshot(unsigned int id);
+void destroy_snapshot(world_snapshot_t);
 
 void request_player(unsigned int id);
 void request_player_end(unsigned int id);

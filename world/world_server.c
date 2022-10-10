@@ -74,21 +74,21 @@ bool in_neighborhood(chunk_id_t a) {
   ;
 }
 
+void destroy_snapshot(world_snapshot_t snapshot) {
+  for(int i = 0; i < CUBE_NUM; i++) {
+    free(snapshot.ship_chunks[i].objects);
+    free(snapshot.ship_chunks[i].lights);
+  }
+}
+
 world_snapshot_t request_snapshot(unsigned int id) {
   world_snapshot_t snapshot;
 
-  // snapshot.chunks[CUBE_NUM] = &(snapshot.ship_chunk);
-  // snapshot.self = &(world_server->players[id].self);
-
-  // unsigned int accept_chunk_ids[CUBE_NUM];
   MTX_LOCK(world_server->player_mtxs + id);
   chunk_id_t current_chunk_id = world_server->players[id].chunk_id;
-  // gather_acceptable_chunks(world_server->players[id].chunk_id, accept_chunk_ids);
   MTX_UNLOCK(world_server->player_mtxs + id);
 
   MTX_LOCK(&(world_server->active_ids_mtx));
-  // snapshot.ship_chunk.objects = malloc(world_server->active_ids.num * sizeof(object_t));
-  // snapshot.ship_chunk.num_objects = 0;
   for(int i = 0; i < CUBE_NUM; i++) {
     snapshot.ship_chunks[i] = (chunk_t) {
       .num_objects = 0,
@@ -110,7 +110,6 @@ world_snapshot_t request_snapshot(unsigned int id) {
       .z = ship_chunk_id.z - current_chunk_id.z
     };
     if (in_neighborhood(rel_chunk_id)) {
-      // printf("rel_chunk_idx: %d %d %d\n", (int) rel_chunk_id.x, (int) rel_chunk_id.y, (int) rel_chunk_id.z);
       int ship_chunk_idx = CUBE_NUM / 2
       + 1 * (int) rel_chunk_id.x
       + 3 * (int) rel_chunk_id.y
@@ -126,6 +125,5 @@ world_snapshot_t request_snapshot(unsigned int id) {
   MTX_UNLOCK(&(world_server->active_ids_mtx));
 
   gather_chunks(snapshot.chunks, current_chunk_id);
-
   return snapshot;
 }
