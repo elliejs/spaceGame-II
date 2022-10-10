@@ -1,6 +1,15 @@
 #include "vector_3d.h"
 
 extern inline
+SGVec3D_t SGVec3D_Sub_SGVec3D(SGVec3D_t a, SGVec3D_t b);
+
+extern inline
+SGVec SGVec3D_dot(SGVec3D_t a, SGVec3D_t b);
+
+extern inline
+SGVec3D_t SGVec3D_cross(SGVec3D_t a, SGVec3D_t b);
+
+extern inline
 SGVec3D_t rot_vec3d(SGVec rots_sin, SGVec rots_cos, SGVec3D_t axis, SGVec3D_t p);
 
 extern inline

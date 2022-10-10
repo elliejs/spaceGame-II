@@ -6,6 +6,8 @@
 
 #include "../utils/types/simd.h"
 
+#define DEG2RAD(X) (((float) M_PI / (float) 180.) * (float) (X))
+
 typedef
 struct SGVec3D_s {
   SGVec x;
@@ -23,19 +25,54 @@ struct float3D_s {
 }
 float3D_t;
 
+#define SGVec3D_ZERO (SGVec3D_t) {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO}
+
+inline
+SGVec3D_t SGVec3D_Sub_SGVec3D(SGVec3D_t a, SGVec3D_t b) {
+  return (SGVec3D_t) {
+    .x = a.x - b.x,
+    .y = a.y - b.y,
+    .z = a.z - b.z
+  };
+}
+
+inline
+SGVec SGVec3D_dot(SGVec3D_t a, SGVec3D_t b) {
+  return
+  SGVec_Add_Mult_SGVec(
+    SGVec_Add_Mult_SGVec(
+      SGVec_Mult_SGVec(a.x, b.x),
+      a.y,
+      b.y
+    ),
+    a.z,
+    b.z
+  );
+}
+
+inline
+SGVec3D_t SGVec3D_cross(SGVec3D_t a, SGVec3D_t b) {
+  return (SGVec3D_t) {
+    .x = SGVec_Sub_SGVec(
+      SGVec_Mult_SGVec(a.y, b.z),
+      SGVec_Mult_SGVec(a.z, b.y)
+    ),
+    .y = SGVec_Sub_SGVec(
+      SGVec_Mult_SGVec(a.z, b.x),
+      SGVec_Mult_SGVec(a.x, b.z)
+    ),
+    .z = SGVec_Sub_SGVec(
+      SGVec_Mult_SGVec(a.x, b.y),
+      SGVec_Mult_SGVec(a.y, b.x)
+    )
+  };
+}
+
 inline
 SGVec3D_t SGVec3D_normalize(SGVec3D_t vec) {
   SGVec recip_magnitude =
     SGVec_Recip_Sqrt(
-      SGVec_Add_Mult_SGVec(
-        SGVec_Add_Mult_SGVec(
-          SGVec_Mult_SGVec(vec.x, vec.x),
-          vec.y,
-          vec.y
-        ),
-        vec.z,
-        vec.z
-      )
+      SGVec3D_dot(vec, vec)
     );
     // printf("recip mag: %f %f %f %f\n", SGVec_Get_Lane(recip_magnitude, 0), SGVec_Get_Lane(recip_magnitude, 1), SGVec_Get_Lane(recip_magnitude, 2), SGVec_Get_Lane(recip_magnitude, 3));
   return (SGVec3D_t) {
@@ -160,15 +197,7 @@ SGVec SGVec3D_distance(SGVec3D_t a, SGVec3D_t b) {
     .y = SGVec_Sub_SGVec(b.y, a.y),
     .z = SGVec_Sub_SGVec(b.z, a.z)
   };
-  SGVec dist2 = SGVec_Add_Mult_SGVec(
-    SGVec_Add_Mult_SGVec(
-      SGVec_Mult_SGVec(a2b.x, a2b.x),
-      a2b.y,
-      a2b.y
-    ),
-    a2b.z,
-    a2b.z
-  );
+  SGVec dist2 = SGVec3D_dot(a2b, a2b);
 
   return SGVec_Reciprocal(SGVec_Recip_Sqrt(dist2));
 }
