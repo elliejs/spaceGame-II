@@ -45,11 +45,11 @@ int channel_data_callback(ssh_session session, ssh_channel channel, void *data, 
       ssh_client->pleaseKill = true;
       break;
     case 0x77: //w
-      request_thrust(ssh_client->id, 5.0);
+      request_thrust(ssh_client->id, 15.0);
       break;
 
     case 0x73: //s
-      request_thrust(ssh_client->id, -5.0);
+      request_thrust(ssh_client->id, -15.0);
       break;
 
     case 0x64: //d
