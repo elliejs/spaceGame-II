@@ -139,6 +139,9 @@ ssh_channel channel_open_request_session_callback(ssh_session session, void *use
   ssh_set_channel_callbacks(ssh_client->channel, &(ssh_client->ssh_client_channel_callbacks));
   ssh_client->pre_channel = false;
 
+  ssh_channel_set_blocking(ssh_client->channel, 0);
+  printf("\t[ssh_client %u]: %s\n", ssh_client->id, "channel set into nonblocking mode");
+
   printf("\t[ssh_client %u]: %s\n", ssh_client->id, "channel successfully opened");
   return ssh_client->channel;
 }
