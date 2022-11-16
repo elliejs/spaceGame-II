@@ -103,7 +103,7 @@ int ssh_client_task(ssh_client_t * ssh_client) {
       reset_ssh_client(ssh_client);
       return EXIT_FAILURE;
     }
-  } while(
+  } while (
     (ssh_channel_is_open(ssh_client->channel) || ssh_client->pre_channel)
     && !ssh_client->pleaseKill
     && (ssh_client->authenticated || ssh_client->auth_attempts < MAX_AUTH_ATTEMPTS));
