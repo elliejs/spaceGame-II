@@ -67,7 +67,7 @@ unsigned char * nblessings_footer_data(unsigned int * footer_len) {
  return NULL;
 }
 
-unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned int width, unsigned char * buffer) {
+unsigned int rasterize_frame(pixel_t * pixels, unsigned int encoded_chunk_id, unsigned int num_pixels, unsigned int width, unsigned char * buffer) {
   unsigned int i = 0;
   memcpy(buffer + i, (unsigned char[]) {CLEAR_SCREEN}, CLEAR_SCREEN_SIZE);
   i += CLEAR_SCREEN_SIZE;
@@ -78,16 +78,7 @@ unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned
 
   for(size_t p_i = 0; p_i < num_pixels; p_i++) {
     unsigned char p_v = pixels[p_i].shape;
-    // if (!p_v) {
-    //   memcpy(buffer + i, (unsigned char[]) {CSI, APPLY_FORE(0), 'm'}, APPLY_COLOR_SIZE);
-    //   i += APPLY_COLOR_SIZE;
-    //   buffer[i++] = ' ';
-    // } else {
-    //   memcpy(buffer + i, (unsigned char[]) {CSI, APPLY_FORE(15), 'm'}, APPLY_COLOR_SIZE);
-    //   i += APPLY_COLOR_SIZE;
-
-
-    if(pixels[p_i].fore == pixels[p_i].back) {
+    if(pixels[p_i].fore == pixels[p_i].back || p_v == 0) {
       if (pixels[p_i].back != back_color) {
         back_color = pixels[p_i].back;
         memcpy(buffer + i, (unsigned char[]) {CSI, APPLY_BACK(back_color), 'm'}, APPLY_COLOR_SIZE);
@@ -99,16 +90,16 @@ unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned
       if(pixels[p_i].fore != fore_color || pixels[p_i].back != back_color) {
         memcpy(buffer + i, (unsigned char[]) {CSI}, 2);
         i += 2;
-        bool adsfg = 0;
+        bool compound_switch = 0;
         if(pixels[p_i].fore != fore_color) {
           fore_color = pixels[p_i].fore;
           memcpy(buffer + i, (unsigned char[]) {APPLY_FORE(fore_color)}, 8);
           i += 8;
-          adsfg = 1;
+          compound_switch = 1;
         }
 
         if(pixels[p_i].back != back_color) {
-          if (adsfg) {
+          if (compound_switch) {
             memcpy(buffer + i, (unsigned char[]) {';'}, 1);
             i += 1;
           }
@@ -118,48 +109,26 @@ unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned
         }
         memcpy(buffer + i, (unsigned char[]) {'m'}, 1);
         i += 1;
-
       }
-
-      //
-      // if (pixels[p_i].fore == fore_color) {
-      //   if(pixels[p_i].back == back_color) {
-      //
-      //   } else {
-      //     memcpy(buffer + i, (char[]) {APPLY_BACK(pixels[p_i].back)}, APPLY_COLOR_SIZE);
-      //     i += APPLY_COLOR_SIZE;
-      //     back_color = pixels[p_i].back;
-      //   }
-      // } else if (pixels[p_i].fore == back_color) {
-      //   p_v ^= 0b1111;
-      //   if(pixels[p_i].back == fore_color) {
-      //
-      //   } else {
-      //     memcpy(buffer + i, (char[]) {APPLY_FORE(pixels[p_i].back)}, APPLY_COLOR_SIZE);
-      //     i += APPLY_COLOR_SIZE;
-      //     fore_color = pixels[p_i].back;
-      //   }
-      // }
-      // else {
-        // memcpy(buffer + i, (char[]) {APPLY_FORE(pixels[p_i].fore), APPLY_BACK(pixels[p_i].back)}, 2 * APPLY_COLOR_SIZE);
-        // i += 2 * APPLY_COLOR_SIZE;
-        // back_color = pixels[p_i].back;
-        // fore_color = pixels[p_i].fore;
-      // }
-
-
-      // if(p_v == 0) {
-      //   // buffer[i++] = ' ';
-      //   memcpy(buffer + i, (char[]) {0x20, 0x00, 0x00, 0x00}, PIXEL_CHAR_SIZE);
-      //   i += PIXEL_CHAR_SIZE;
-      // } else {
       memcpy(buffer + i, (unsigned char[]) {BLOCK_CHAR_PREFIX, pixel_selector_byte[p_v]}, PIXEL_CHAR_SIZE);
       i += PIXEL_CHAR_SIZE;
     }
-    // if(!((p_i + 1) % width)) {
-    //   buffer[i++] = '\n';
-    // }
   }
+  // memcpy(buffer + i, (unsigned char[]) {CSI}, 2);
+  // i += 2;
+  // memcpy(buffer + i, (unsigned char[]) {APPLY_FORE(30)}, 8);
+  // i += 8;
+  // memcpy(buffer + i, (unsigned char[]) {';'}, 1);
+  // i += 1;
+  // memcpy(buffer + i, (unsigned char[]) {APPLY_BACK(0)}, 8);
+  // i += 8;
+  // memcpy(buffer + i, (unsigned char[]) {'m'}, 1);
+  // i += 1;
+  // for (int c_i = 0; c_i < sizeof(unsigned int) * 2; c_i++) {
+  //   unsigned int hex = (encoded_chunk_id & 0b1111);
+  //   buffer[i++] = hex > 9 ? 'A' + hex - 10 : '0' + hex;
+  //   encoded_chunk_id >>= 4;
+  // }
   buffer[i++] = '\0';
 
   return i;

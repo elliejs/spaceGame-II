@@ -20,6 +20,6 @@ pixel_t;
 
 unsigned char * nblessings_header_data(oklab_t * colors, unsigned int num_colors, unsigned int * header_len);
 unsigned char * nblessings_footer_data(unsigned int * footer_len);
-unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned int width, unsigned char * buffer);
+unsigned int rasterize_frame(pixel_t * pixels, unsigned int encoded_chunk_id, unsigned int num_pixels, unsigned int width, unsigned char * buffer);
 
 #endif /* end of include guard: NBLESSINGS_H */
