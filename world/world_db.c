@@ -22,17 +22,17 @@ void generate_chunk(unsigned int encoded_id, cache_item_t * item) {
 
   item->objects[0] = create_planet(
     (SGVec3D_t) {
-      .x = SGVec_Load_Const(20.),
-      .y = SGVec_Load_Const(20.),
-      .z = SGVec_Load_Const(100.)
+      .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
+      .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
+      .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
     },
     SGVec_Load_Const(50.)
   );
   item->objects[1] = create_star(
     (SGVec3D_t) {
-      .x = SGVec_Load_Const(100),
-      .y = SGVec_Load_Const(100),
-      .z = SGVec_Load_Const(50.)
+      .x = SGVec_Load_Const(CHUNK_SIZE * 0.75),
+      .y = SGVec_Load_Const(CHUNK_SIZE * 0.75),
+      .z = SGVec_Load_Const(CHUNK_SIZE * 0.75)
     },
     SGVec_Load_Const(50.)
   );
