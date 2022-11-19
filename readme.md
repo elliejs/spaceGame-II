@@ -55,3 +55,5 @@ There are many build targets available with make.
   - [ ] user keymaps for Colemak, Dvorak, etc
   - [ ] save-states for location, health, inventory, etc
 - [ ] Friend sharing and waypointing
+- [ ] Speed Optimizations
+  - [ ] hoist as many constants to compile time as possible
