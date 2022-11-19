@@ -67,8 +67,8 @@
 #endif
 
 //float
-#define SGVec_ZERO                              SGVec_Load_Const(0)
-#define SGVec_ONE                               SGVec_Load_Const(1)
+#define SGVec_ZERO                              SGVec_Load_Const(0.0)
+#define SGVec_ONE                               SGVec_Load_Const(1.0)
 //int
 #define SGVecUInt_ZERO                          SGVecUInt_Load_Const(0)
 #define SGVecUInt_ONE                           SGVecUInt_Load_Const(1)
@@ -144,8 +144,9 @@
 #   define SGVec_Sub_SGVec(X, Y)                _mm_sub_ps((X), (Y))
 #   define SGVec_Mult_SGVec(X, Y)               _mm_mul_ps((X), (Y))
 
-#   define SGVec_Add_Mult_SGVec(X, Y, Z)        _mm_fmadd_ps((Y), (Z), (X))
-// #   define SGVec_Mult_Float(X, Y)               vmulq_n_f32((X), (Y)) //DOESNT EXIST
+#   define SGVec_Add_Mult_SGVec(X, Y, Z)        SGVec_Add_SGVec((X), SGVec_Mult_SGVec((Y), (Z)))
+  //_mm_fmadd_ps((Y), (Z), (X)) //FMA extension required
+#   define SGVec_Mult_Float(X, Y)               vmulq_n_f32((X), SGVec_Load_Const((Y))) //DOESNT EXIST
 
 #   define SGVec_Negate(X)                      SGVec_Sub_SGVec(SGVec_ZERO, (X)) //DOESNT EXIST
 #   define SGVec_Absolute(X)                    vabsq_f32((X)) //DOESNT EXIST
@@ -209,6 +210,12 @@ inline
 bool lanes_true(SGVecUInt x) {
   SGVecShortUInt x_2 = SGVecShortUInt_Fold_Min(SGVecUInt_Bottom_Short(x), SGVecUInt_Top_Short(x));
   return ~(SGVecShortUInt_Get_Lane(SGVecShortUInt_Fold_Min(x_2, x_2), 0)) == 0;
+}
+
+inline
+bool lanes_any(SGVecUInt x) {
+  SGVecShortUInt x_2 = SGVecShortUInt_Fold_Max(SGVecUInt_Bottom_Short(x), SGVecUInt_Top_Short(x));
+  return (SGVecShortUInt_Get_Lane(SGVecShortUInt_Fold_Max(x_2, x_2), 0)) != 0;
 }
 
 inline
