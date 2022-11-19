@@ -78,14 +78,12 @@ const struct timespec fps_ts = (struct timespec) {
 
 static inline
 SGVec3D_t create_rays(orientation_t orientation, SGVec rots_sin_x, SGVec rots_cos_x, SGVec rots_sin_y, SGVec rots_cos_y) {
+  SGVec4D_t rot_quat_y = prepare_rot_quat(rots_sin_y, rots_cos_y, orientation.right);
+  SGVec4D_t rot_quat_x = prepare_rot_quat(rots_sin_x, rots_cos_x, orientation.up);
   return rot_vec3d(
-    rots_sin_y,
-    rots_cos_y,
-    orientation.right,
+    rot_quat_y,
     rot_vec3d(
-      rots_sin_x,
-      rots_cos_x,
-      orientation.up,
+      rot_quat_x,
       orientation.forward
     ));
 }
@@ -212,7 +210,6 @@ void enqueue_render() {
   }
 }
 
-#define DEG2RAD(X) (((float) M_PI / (float) 180.) * (float) (X))
 
 static
 const float FOV_RAD = DEG2RAD(FOV);
@@ -241,7 +238,11 @@ void render_daemon_request_dimensions(int width, int height) {
 static inline
 void blit() {
   SEM_WAITVAL(render_client.job_sem, 1, NUM_THREADS);
-  unsigned int len = rasterize_frame(render_client.framebuffer, render_client.width * render_client.height, render_client.width, render_client.stream_buffer);
+  for (int i = 0; i < render_client.width * render_client.height; i++) {
+    if (render_client.framebuffer[i].fore >= render_client.num_colors || render_client.framebuffer[i].back >= render_client.num_colors) {
+    }
+  }
+  unsigned int len = rasterize_frame(render_client.framebuffer, render_client.snapshot.encoded_chunk_id, render_client.width * render_client.height, render_client.width, render_client.stream_buffer);
   unsigned int written = 0;
   printf("would like to write %u\n", len);
   while (written < len) {
@@ -270,10 +271,7 @@ void * render_task(void * nothing) {
     MTX_UNLOCK(&(render_client.dim_mtx));
 
     printf("[render_client %u]: blitted\n", id);
-    for(int i = 0; i < CUBE_NUM; i++) {
-      free(render_client.snapshot.ship_chunks[i].objects);
-      free(render_client.snapshot.ship_chunks[i].lights);
-    }
+    destroy_snapshot(render_client.snapshot);
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_testcancel();
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -308,7 +306,8 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   render_client.job_sem = SEM_INIT(2);
   SEM_SETVAL(render_client.job_sem, 0, 0);
   SEM_SETVAL(render_client.job_sem, 1, 0);
-  for (int i = 0; i < NUM_THREADS; i++) pthread_create(render_client.pixel_worker_pids + i, NULL, pixel_task, NULL);
+  for (int i = 0; i < NUM_THREADS; i++)
+    pthread_create(render_client.pixel_worker_pids + i, NULL, pixel_task, NULL);
 
   pthread_create(&(render_client.pid), NULL, render_task, NULL);
 

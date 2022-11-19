@@ -7,6 +7,9 @@
 world_server_t * world_server = NULL;
 SGVec3D_t chunk_offsets[CUBE_NUM];
 
+extern inline
+SGVec3D_t get_chunk_offset(unsigned int chuck_offset_idx);
+
 void start_world_server() {
   if (world_server != NULL) {
     printf("[world_server]: Already instantiated, not double-mallocing\n");
@@ -14,9 +17,9 @@ void start_world_server() {
   }
 
   int i = 0;
-  for(int x = -1; x <= 1; x++) {
+  for(int z = -1; z <= 1; z++) {
     for(int y = -1; y <= 1; y++) {
-      for(int z = -1; z <= 1; z++) {
+      for(int x = -1; x <= 1; x++) {
         chunk_offsets[i++] = (SGVec3D_t) {
           .x = SGVec_Load_Const(x * CHUNK_SIZE),
           .y = SGVec_Load_Const(y * CHUNK_SIZE),
@@ -37,9 +40,9 @@ void request_player(unsigned int id) {
   printf("requesting player\n");
   MTX_LOCK(world_server->player_mtxs + id);
   world_server->players[id].self = create_ship((SGVec3D_t) {
-    .x = SGVec_Load_Const(20.),
-    .y = SGVec_Load_Const(20.),
-    .z = SGVec_Load_Const(20.)
+    .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
+    .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
+    .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
   });
   world_server->players[id].chunk_id = CHUNK_ORIGIN_ID;
   MTX_UNLOCK(world_server->player_mtxs + id);
@@ -125,5 +128,6 @@ world_snapshot_t request_snapshot(unsigned int id) {
   MTX_UNLOCK(&(world_server->active_ids_mtx));
 
   gather_chunks(snapshot.chunks, current_chunk_id);
+  snapshot.encoded_chunk_id = encode_chunk_id(current_chunk_id);
   return snapshot;
 }

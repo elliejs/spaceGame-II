@@ -66,6 +66,7 @@ struct world_snapshot_s {
   chunk_t * chunks[2 * CUBE_NUM];
   chunk_t ship_chunks[CUBE_NUM];
   object_t * self;
+  unsigned int encoded_chunk_id;
 }
 world_snapshot_t;
 
@@ -98,8 +99,14 @@ void destroy_snapshot(world_snapshot_t);
 void request_player(unsigned int id);
 void request_player_end(unsigned int id);
 
-void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin);
+// void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin);
 
 extern world_server_t * world_server;
+
+inline
+SGVec3D_t get_chunk_offset(unsigned int chuck_offset_idx) {
+  chuck_offset_idx %= CUBE_NUM;
+  return chunk_offsets[chuck_offset_idx];
+}
 
 #endif /* end of include guard: WORLD_SERVER_H */

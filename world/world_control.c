@@ -125,23 +125,32 @@ void request_yaw(unsigned int id, float amt) {
   SGVec amt_cos = SGVec_Load_Const(cosf(amt));
   SGVec amt_sin = SGVec_Load_Const(sinf(amt));
   MTX_LOCK(world_server->player_mtxs + id);
-  world_server->players[id].self.ship.orientation.forward = rot_vec3d(amt_sin, amt_cos, world_server->players[id].self.ship.orientation.up, world_server->players[id].self.ship.orientation.forward);
-  world_server->players[id].self.ship.orientation.right   = rot_vec3d(amt_sin, amt_cos, world_server->players[id].self.ship.orientation.up, world_server->players[id].self.ship.orientation.right);
+  SGVec4D_t rot_quat = prepare_rot_quat(amt_sin, amt_cos, world_server->players[id].self.ship.orientation.up);
+  world_server->players[id].self.ship.rot_quats.forward = SGVec4D_Mult_SGVec4D(rot_quat, world_server->players[id].self.ship.rot_quats.forward);
+  world_server->players[id].self.ship.rot_quats.right = SGVec4D_Mult_SGVec4D(rot_quat, world_server->players[id].self.ship.rot_quats.right);
+  world_server->players[id].self.ship.orientation.forward = rot_vec3d(rot_quat, world_server->players[id].self.ship.orientation.forward);
+  world_server->players[id].self.ship.orientation.right   = rot_vec3d(rot_quat, world_server->players[id].self.ship.orientation.right);
   MTX_UNLOCK(world_server->player_mtxs + id);
 }
 void request_pitch(unsigned int id, float amt) {
   SGVec amt_cos = SGVec_Load_Const(cosf(amt));
   SGVec amt_sin = SGVec_Load_Const(sinf(amt));
   MTX_LOCK(world_server->player_mtxs + id);
-  world_server->players[id].self.ship.orientation.forward = rot_vec3d(amt_sin, amt_cos, world_server->players[id].self.ship.orientation.right, world_server->players[id].self.ship.orientation.forward);
-  world_server->players[id].self.ship.orientation.up      = rot_vec3d(amt_sin, amt_cos, world_server->players[id].self.ship.orientation.right, world_server->players[id].self.ship.orientation.up);
+  SGVec4D_t rot_quat = prepare_rot_quat(amt_sin, amt_cos, world_server->players[id].self.ship.orientation.right);
+  world_server->players[id].self.ship.rot_quats.forward = SGVec4D_Mult_SGVec4D(rot_quat, world_server->players[id].self.ship.rot_quats.forward);
+  world_server->players[id].self.ship.rot_quats.up = SGVec4D_Mult_SGVec4D(rot_quat, world_server->players[id].self.ship.rot_quats.up);
+  world_server->players[id].self.ship.orientation.forward = rot_vec3d(rot_quat, world_server->players[id].self.ship.orientation.forward);
+  world_server->players[id].self.ship.orientation.up   = rot_vec3d(rot_quat, world_server->players[id].self.ship.orientation.up);
   MTX_UNLOCK(world_server->player_mtxs + id);
 }
 void request_roll(unsigned int id, float amt) {
   SGVec amt_cos = SGVec_Load_Const(cosf(amt));
   SGVec amt_sin = SGVec_Load_Const(sinf(amt));
   MTX_LOCK(world_server->player_mtxs + id);
-  world_server->players[id].self.ship.orientation.up = rot_vec3d(amt_sin, amt_cos, world_server->players[id].self.ship.orientation.forward, world_server->players[id].self.ship.orientation.up);
-  world_server->players[id].self.ship.orientation.right   = rot_vec3d(amt_sin, amt_cos, world_server->players[id].self.ship.orientation.forward, world_server->players[id].self.ship.orientation.right);
+  SGVec4D_t rot_quat = prepare_rot_quat(amt_sin, amt_cos, world_server->players[id].self.ship.orientation.forward);
+  world_server->players[id].self.ship.rot_quats.up = SGVec4D_Mult_SGVec4D(rot_quat, world_server->players[id].self.ship.rot_quats.up);
+  world_server->players[id].self.ship.rot_quats.right = SGVec4D_Mult_SGVec4D(rot_quat, world_server->players[id].self.ship.rot_quats.right);
+  world_server->players[id].self.ship.orientation.up = rot_vec3d(rot_quat, world_server->players[id].self.ship.orientation.up);
+  world_server->players[id].self.ship.orientation.right   = rot_vec3d(rot_quat, world_server->players[id].self.ship.orientation.right);
   MTX_UNLOCK(world_server->player_mtxs + id);
 }

@@ -16,23 +16,33 @@ struct SGVec3D_s {
 }
 SGVec3D_t;
 
-
 typedef
-struct float3D_s {
-  float x;
-  float y;
-  float z;
+struct SGVec4D_s {
+  SGVec x;
+  SGVec y;
+  SGVec z;
+  SGVec w;
 }
-float3D_t;
+SGVec4D_t;
+
+#define SGVec4D_IDENTITY (SGVec4D_t) {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO, SGVec_ONE}
 
 #define SGVec3D_ZERO (SGVec3D_t) {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO}
+inline
+SGVec3D_t SGVec3D_Add_SGVec3D(SGVec3D_t a, SGVec3D_t b) {
+  return (SGVec3D_t) {
+    .x = SGVec_Add_SGVec(a.x, b.x),
+    .y = SGVec_Add_SGVec(a.y, b.y),
+    .z = SGVec_Add_SGVec(a.z, b.z)
+  };
+}
 
 inline
 SGVec3D_t SGVec3D_Sub_SGVec3D(SGVec3D_t a, SGVec3D_t b) {
   return (SGVec3D_t) {
-    .x = a.x - b.x,
-    .y = a.y - b.y,
-    .z = a.z - b.z
+    .x = SGVec_Sub_SGVec(a.x, b.x),
+    .y = SGVec_Sub_SGVec(a.y, b.y),
+    .z = SGVec_Sub_SGVec(a.z, b.z)
   };
 }
 
@@ -83,24 +93,78 @@ SGVec3D_t SGVec3D_normalize(SGVec3D_t vec) {
 }
 
 inline
-float3D_t float_normalize(float3D_t vec) {
-  float magnitude = sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
-  // printf("mag: %f\n", magnitude);
-
-  return (float3D_t) {
-    .x = vec.x / (float) magnitude,
-    .y = vec.y / (float) magnitude,
-    .z = vec.z / (float) magnitude
+SGVec4D_t prepare_rot_quat(SGVec rots_sin, SGVec rots_cos, SGVec3D_t axis) {
+  return (SGVec4D_t) {
+    .x = SGVec_Mult_SGVec(axis.x, rots_sin),
+    .y = SGVec_Mult_SGVec(axis.y, rots_sin),
+    .z = SGVec_Mult_SGVec(axis.z, rots_sin),
+    .w = rots_cos
   };
 }
 
 inline
-SGVec3D_t rot_vec3d(SGVec rots_sin, SGVec rots_cos, SGVec3D_t axis, SGVec3D_t p) {
+SGVec4D_t SGVec4D_Invert(SGVec4D_t a) {
+ return (SGVec4D_t) {
+   .x = SGVec_Negate(a.x),
+   .y = SGVec_Negate(a.y),
+   .z = SGVec_Negate(a.z),
+   .w = a.w
+ };
+}
+
+inline
+SGVec4D_t SGVec4D_Mult_SGVec4D(SGVec4D_t a, SGVec4D_t b) {
+  return (SGVec4D_t) {
+    .x = SGVec_Sub_SGVec(
+      SGVec_Sub_SGVec(
+        SGVec_Sub_SGVec(
+          SGVec_Mult_SGVec(a.w, b.x),
+          SGVec_Mult_SGVec(a.x, b.w)
+        ),
+        SGVec_Mult_SGVec(a.y, b.z)
+      ),
+      SGVec_Mult_SGVec(a.z, b.y)
+    ),
+    .y = SGVec_Add_SGVec(
+      SGVec_Sub_SGVec(
+        SGVec_Add_SGVec(
+          SGVec_Mult_SGVec(a.w, b.y),
+          SGVec_Mult_SGVec(a.x, b.z)
+        ),
+        SGVec_Mult_SGVec(a.y, b.w)
+      ),
+      SGVec_Mult_SGVec(a.z, b.x)
+    ),
+    .z = SGVec_Add_SGVec(
+      SGVec_Add_SGVec(
+        SGVec_Sub_SGVec(
+          SGVec_Mult_SGVec(a.w, b.z),
+          SGVec_Mult_SGVec(a.x, b.y)
+        ),
+        SGVec_Mult_SGVec(a.y, b.x)
+      ),
+      SGVec_Mult_SGVec(a.z, b.w)
+    ),
+    .w = SGVec_Sub_SGVec(
+      SGVec_Add_SGVec(
+        SGVec_Add_SGVec(
+          SGVec_Mult_SGVec(a.w, b.w),
+          SGVec_Mult_SGVec(a.x, b.x)
+        ),
+        SGVec_Mult_SGVec(a.y, b.y)
+      ),
+      SGVec_Mult_SGVec(a.z, b.z)
+    )
+  };
+}
+
+inline
+SGVec3D_t rot_vec3d(SGVec4D_t rot_quat, SGVec3D_t p) {
   //Q
-  SGVec q_x = SGVec_Mult_SGVec(axis.x, rots_sin);
-  SGVec q_y = SGVec_Mult_SGVec(axis.y, rots_sin);
-  SGVec q_z = SGVec_Mult_SGVec(axis.z, rots_sin);
-  SGVec q_s = rots_cos;
+  SGVec q_x = rot_quat.x;
+  SGVec q_y = rot_quat.y;
+  SGVec q_z = rot_quat.z;
+  SGVec q_s = rot_quat.w;
 
   //Q x P
   SGVec qXp_x_1 = SGVec_Mult_SGVec(p.x, q_s);
@@ -200,15 +264,6 @@ SGVec SGVec3D_distance(SGVec3D_t a, SGVec3D_t b) {
   SGVec dist2 = SGVec3D_dot(a2b, a2b);
 
   return SGVec_Reciprocal(SGVec_Recip_Sqrt(dist2));
-}
-
-inline
-float float3D_distance(float3D_t a, float3D_t b) {
-  float bSUBa_x = b.x - a.x;
-  float bSUBa_y = b.y - a.y;
-  float bSUBa_z = b.z - a.z;
-
-  return sqrtf(bSUBa_x * bSUBa_x + bSUBa_y * bSUBa_y + bSUBa_z * bSUBa_z);
 }
 
 #endif /* end of include guard: VECTOR_3D_H */
