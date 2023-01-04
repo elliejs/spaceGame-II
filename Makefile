@@ -27,4 +27,4 @@ clean :
 	rm $(OFILESFLAT)
 
 help :
-	@echo	"make :: [optimized, debug, all, clean, shader, help(this message)]"
+	@echo	"make :: [optimized, debug, all, clean, help(this message)]"
