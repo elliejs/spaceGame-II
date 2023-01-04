@@ -7,6 +7,9 @@ extern inline
 SGVec3D_t SGVec3D_Sub_SGVec3D(SGVec3D_t a, SGVec3D_t b);
 
 extern inline
+SGVec3D_t SGVec3D_Mult_SGVec(SGVec3D_t a, SGVec b);
+
+extern inline
 SGVec SGVec3D_dot(SGVec3D_t a, SGVec3D_t b);
 
 extern inline

@@ -28,6 +28,7 @@ SGVec4D_t;
 #define SGVec4D_IDENTITY (SGVec4D_t) {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO, SGVec_ONE}
 
 #define SGVec3D_ZERO (SGVec3D_t) {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO}
+
 inline
 SGVec3D_t SGVec3D_Add_SGVec3D(SGVec3D_t a, SGVec3D_t b) {
   return (SGVec3D_t) {
@@ -43,6 +44,15 @@ SGVec3D_t SGVec3D_Sub_SGVec3D(SGVec3D_t a, SGVec3D_t b) {
     .x = SGVec_Sub_SGVec(a.x, b.x),
     .y = SGVec_Sub_SGVec(a.y, b.y),
     .z = SGVec_Sub_SGVec(a.z, b.z)
+  };
+}
+
+inline
+SGVec3D_t SGVec3D_Mult_SGVec(SGVec3D_t a, SGVec b) {
+  return (SGVec3D_t) {
+    .x = SGVec_Mult_SGVec(a.x, b),
+    .y = SGVec_Mult_SGVec(a.y, b),
+    .z = SGVec_Mult_SGVec(a.z, b)
   };
 }
 
