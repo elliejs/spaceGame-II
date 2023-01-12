@@ -1,14 +1,15 @@
 #include "star.h"
 
 static
-SGVec distance(object_t * self, SGVec3D_t point, int chunk_idx) {
-  SGVec3D_t chunk_offset = get_chunk_offset(chunk_idx);
+SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx) {
+  // return SGVec_Load_Const(1000000000000.);
+  SGVec3D_t cube_offset = get_cube_offset(cube_idx);
   return SGVec_Sub_SGVec(
     SGVec3D_distance(
       (SGVec3D_t) {
-        SGVec_Add_SGVec(self->origin.x, chunk_offset.x),
-        SGVec_Add_SGVec(self->origin.y, chunk_offset.y),
-        SGVec_Add_SGVec(self->origin.z, chunk_offset.z)
+        SGVec_Add_SGVec(self->origin.x, cube_offset.x),
+        SGVec_Add_SGVec(self->origin.y, cube_offset.y),
+        SGVec_Add_SGVec(self->origin.z, cube_offset.z)
       },
       point
     ),
@@ -16,7 +17,7 @@ SGVec distance(object_t * self, SGVec3D_t point, int chunk_idx) {
 }
 
 static
-SGVecOKLAB_t color(object_t * self, SGVec3D_t point, int chunk_idx) {
+SGVecOKLAB_t color(object_t * self, SGVec3D_t point) {
   return (SGVecOKLAB_t) {
     .l = SGVec_Load_Const(1.),
     .a = SGVec_Load_Const(0.),
@@ -27,7 +28,7 @@ SGVecOKLAB_t color(object_t * self, SGVec3D_t point, int chunk_idx) {
 SGVecOKLAB_t radiance(star_t * self, SGVec dists) {
   return (SGVecOKLAB_t) {
     // .l = SGVec_Load_Const(0.4),
-    .l = SGVec_Mult_SGVec(SGVec_Load_Const(5000.), SGVec_Reciprocal(SGVec_Mult_SGVec(dists, dists))),
+    .l = SGVec_Mult_SGVec(SGVec_Load_Const(50.), SGVec_Reciprocal(dists)),
     .a = SGVec_Load_Const(0.),
     .b = SGVec_Load_Const(0.)
   };

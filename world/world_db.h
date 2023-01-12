@@ -37,9 +37,9 @@ world_db_t;
 
 #include "world_server.h"
 
-void gather_chunks(chunk_t ** chunk_storage, chunk_id_t chunk_id);
+void gather_chunks(chunk_t ** chunk_storage, chunk_coord_t abs_coord);
 void start_world_db(world_db_t * world_db);
 void end_world_db(world_db_t * world_db);
-unsigned int encode_chunk_id(chunk_id_t id);
+unsigned int encode_chunk_coord(chunk_coord_t abs_coord);
 
 #endif /* end of include guard: WORLD_DB_H */

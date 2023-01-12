@@ -1,0 +1,42 @@
+Codename SpaceGame II Demo: Rhombuses
+--------------------------
+Codename SpaceGame II is a new kind of game. One that needs no client, and is supported 
+anywhere the internet runs and secure shells are supported (hint that's almost everywhere, 
+even your grandma's laptop from the nineties). The SpaceGame II server communicates over 
+SSH; simply log in to the server and unicode text begins streaming to the client. This text 
+is colored, made of unicode pixels, and is served at the terminal resolution 10 times a 
+second. With even this relatively low FPS, convincing real-time 3D graphics can be 
+approximated, right in the shell, without any form of downloaded game client.
+
+SpaceGame II is completely calculated on the server side, keeping it virtually free for the 
+client to run. While only machines that can handle re-programmable color palettes and 256 
+colors are supported, more configurations are planned to be supported. The core renderer of 
+SpaceGame II is a ray-marcher, giving the game its signature high-fidelity-pixel-art look. 
+Colors are calculated in OKLAB, a colorspace focused on human perception, unlike naïve RGB 
+implementations and lighting obeys the inverse square law found in the real world. It's a 
+hidden gem of the internet, quietly humming away as an art piece in a dusty corner of the 
+digital world.
+
+This demo of Codename SpaceGame II showcases some of the new improvements:
+	- increased connection stability when more than one client is connected
+	- The first non-spherical entity, spaceships.
+	- The first example of rendered rotations
+	- speed increase created by per-pixel-ray frustum culling
+
+
+Controls:
+--------------------------
+← yaw left
+→ yaw right
+↑ pitch up
+↓ pitch down
+
+A roll counterclockwise
+D roll clockwise
+W thrust forward
+S thrust backward
+
+The keen observer may notice the ship rotation in view is not completely faithful. It's on 
+the roadmap :-)
+
+----ellieware

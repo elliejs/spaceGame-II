@@ -238,11 +238,11 @@ void render_daemon_request_dimensions(int width, int height) {
 static inline
 void blit() {
   SEM_WAITVAL(render_client.job_sem, 1, NUM_THREADS);
-  for (int i = 0; i < render_client.width * render_client.height; i++) {
-    if (render_client.framebuffer[i].fore >= render_client.num_colors || render_client.framebuffer[i].back >= render_client.num_colors) {
-    }
-  }
-  unsigned int len = rasterize_frame(render_client.framebuffer, render_client.snapshot.encoded_chunk_id, render_client.width * render_client.height, render_client.width, render_client.stream_buffer);
+  // for (int i = 0; i < render_client.width * render_client.height; i++) {
+  //   if (render_client.framebuffer[i].fore >= render_client.num_colors || render_client.framebuffer[i].back >= render_client.num_colors) {
+  //   }
+  // }
+  unsigned int len = rasterize_frame(render_client.framebuffer, render_client.width * render_client.height, render_client.width, render_client.stream_buffer);
   unsigned int written = 0;
   printf("would like to write %u\n", len);
   while (written < len) {

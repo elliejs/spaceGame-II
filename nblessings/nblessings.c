@@ -67,7 +67,7 @@ unsigned char * nblessings_footer_data(unsigned int * footer_len) {
  return NULL;
 }
 
-unsigned int rasterize_frame(pixel_t * pixels, unsigned int encoded_chunk_id, unsigned int num_pixels, unsigned int width, unsigned char * buffer) {
+unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned int width, unsigned char * buffer) {
   unsigned int i = 0;
   memcpy(buffer + i, (unsigned char[]) {CLEAR_SCREEN}, CLEAR_SCREEN_SIZE);
   i += CLEAR_SCREEN_SIZE;

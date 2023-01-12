@@ -75,6 +75,10 @@ int channel_data_callback(ssh_session session, ssh_channel channel, void *data, 
     case 0x43: //right-arrow
       request_yaw(ssh_client->id, 0.1);
       break;
+
+    case 0x72: //r
+      request_vision(ssh_client->id, RADAR);
+      break;
   }
 
   return (int) len;

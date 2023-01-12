@@ -6,7 +6,7 @@
 #define FOV 45
 
 #define STEP_MAX 1000
-#define HIT_DIST 10.
+#define HIT_DIST 2.
 #define MAX_DIST 2.0 * CHUNK_SIZE
 #define NORMAL_EPSILON 1.
 

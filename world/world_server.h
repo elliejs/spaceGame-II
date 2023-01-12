@@ -3,6 +3,7 @@
 
 #include "../math/vector_3d.h"
 #include "../utils/semaphore.h"
+#include "chunk.h"
 
 #define MAX_CLIENTS 256
 
@@ -13,17 +14,8 @@
 
 #define CHUNK_POW 10
 #define CHUNK_SIZE (1 << CHUNK_POW)
-
-#include "../objects/object.h"
-
+#define NOISE_DOMAIN_SIZE CHUNK_SIZE << 2
 extern SGVec3D_t chunk_offsets[CUBE_NUM];
-
-#define CHUNK_ORIGIN_ID \
-  (chunk_id_t) { \
-    .x = 0, \
-    .y = 0, \
-    .z = 0  \
-  }
 
 #define FAST_LIST_T(T, MAX)                   \
   struct {                                    \
@@ -42,6 +34,8 @@ extern SGVec3D_t chunk_offsets[CUBE_NUM];
     }                                         \
   }
 
+#include "../objects/object.h"
+
 typedef
 struct chunk_s {
   unsigned int num_objects;
@@ -53,20 +47,11 @@ struct chunk_s {
 chunk_t;
 
 typedef
-struct chunk_id_s {
-  unsigned int x;
-  unsigned int y;
-  unsigned int z;
-}
-chunk_id_t;
-
-typedef
 struct world_snapshot_s {
   // unsigned long time;
   chunk_t * chunks[2 * CUBE_NUM];
   chunk_t ship_chunks[CUBE_NUM];
   object_t * self;
-  unsigned int encoded_chunk_id;
 }
 world_snapshot_t;
 
@@ -81,10 +66,7 @@ struct world_server_s {
   pthread_mutex_t active_ids_mtx;
 
   pthread_mutex_t player_mtxs[MAX_CLIENTS];
-  struct {
-    object_t self;
-    chunk_id_t chunk_id;
-  } players[MAX_CLIENTS];
+  object_t players[MAX_CLIENTS];
 
   world_db_t world_db;
 }
@@ -99,14 +81,12 @@ void destroy_snapshot(world_snapshot_t);
 void request_player(unsigned int id);
 void request_player_end(unsigned int id);
 
-// void point_to_chunk_id(float3D_t point, unsigned int * id, float3D_t * origin);
-
 extern world_server_t * world_server;
+extern SGVec3D_t cube_offsets[CUBE_NUM * 2];
 
 inline
-SGVec3D_t get_chunk_offset(unsigned int chuck_offset_idx) {
-  chuck_offset_idx %= CUBE_NUM;
-  return chunk_offsets[chuck_offset_idx];
+SGVec3D_t get_cube_offset(unsigned int cube_idx) {
+  return cube_offsets[cube_idx];
 }
 
 #endif /* end of include guard: WORLD_SERVER_H */

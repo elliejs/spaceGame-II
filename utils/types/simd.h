@@ -91,8 +91,11 @@
 
 #   define SGVec_Recip_Sqrt(X)                  vrsqrteq_f32((X))
 #   define SGVec_Reciprocal(X)                  vrecpeq_f32((X))
+
+#   define SGVec_Floor(X)                       vrndq_f32((X))
   //int
 // #   define SGVecUInt_Mult_UInt(X, Y)            vmulq_n_u32((X), (Y))
+#   define SGVecUInt_Sub_SGVecUInt(X, Y)        vsubq_u32((X), (Y))
 
 //LOGIC
   //float
@@ -121,6 +124,7 @@
   //int
 #   define SGVec_Cast_SGVecUInt(X)              vcvtq_f32_u32((X))
 #   define SGVec_Cast_SGVecInt(X)               vcvtq_f32_s32((X))
+#   define SGVecInt_Cast_SGVecUInt(X)           vreinterpretq_u32_s32((X))
 
 // BAD OPERATORS
 // AND THEY SHOULD FEEL BAD

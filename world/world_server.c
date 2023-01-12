@@ -5,10 +5,10 @@
 #include "world_server.h"
 
 world_server_t * world_server = NULL;
-SGVec3D_t chunk_offsets[CUBE_NUM];
+SGVec3D_t cube_offsets[CUBE_NUM * 2];
 
 extern inline
-SGVec3D_t get_chunk_offset(unsigned int chuck_offset_idx);
+SGVec3D_t get_cube_offset(unsigned int cube_idx);
 
 void start_world_server() {
   if (world_server != NULL) {
@@ -20,11 +20,12 @@ void start_world_server() {
   for(int z = -1; z <= 1; z++) {
     for(int y = -1; y <= 1; y++) {
       for(int x = -1; x <= 1; x++) {
-        chunk_offsets[i++] = (SGVec3D_t) {
+        cube_offsets[i + CUBE_NUM] = cube_offsets[i] = (SGVec3D_t) {
           .x = SGVec_Load_Const(x * CHUNK_SIZE),
           .y = SGVec_Load_Const(y * CHUNK_SIZE),
           .z = SGVec_Load_Const(z * CHUNK_SIZE)
         };
+        i++;
       }
     }
   }
@@ -39,12 +40,14 @@ void start_world_server() {
 void request_player(unsigned int id) {
   printf("requesting player\n");
   MTX_LOCK(world_server->player_mtxs + id);
-  world_server->players[id].self = create_ship((SGVec3D_t) {
-    .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
-    .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
-    .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
-  });
-  world_server->players[id].chunk_id = CHUNK_ORIGIN_ID;
+  world_server->players[id] = create_ship(
+    (SGVec3D_t) {
+      .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
+      .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
+      .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
+    },
+    (chunk_coord_t) {0,0,0} //will be loaded from logout save once the user DB is alive
+  );
   MTX_UNLOCK(world_server->player_mtxs + id);
 
   MTX_LOCK(&(world_server->active_ids_mtx));
@@ -67,7 +70,7 @@ void end_world_server() {
   munmap(world_server, sizeof(world_server_t));
 }
 
-bool in_neighborhood(chunk_id_t a) {
+bool in_neighborhood(chunk_coord_t a) {
   return
   (0 <= (a.x + 1) && (a.x + 1) <= 2)
   &&
@@ -88,7 +91,7 @@ world_snapshot_t request_snapshot(unsigned int id) {
   world_snapshot_t snapshot;
 
   MTX_LOCK(world_server->player_mtxs + id);
-  chunk_id_t current_chunk_id = world_server->players[id].chunk_id;
+  chunk_coord_t self_abs_coord = world_server->players[id].ship.abs_coord;
   MTX_UNLOCK(world_server->player_mtxs + id);
 
   MTX_LOCK(&(world_server->active_ids_mtx));
@@ -105,29 +108,29 @@ world_snapshot_t request_snapshot(unsigned int id) {
 
   for (int i = 0; i < world_server->active_ids.num; i++) {
     unsigned int iter_id = world_server->active_ids.data[i];
+    printf("ship id %d requesting ship id %d\n", id, iter_id);
     MTX_LOCK(world_server->player_mtxs + iter_id);
-    chunk_id_t ship_chunk_id = world_server->players[iter_id].chunk_id;
-    chunk_id_t rel_chunk_id = (chunk_id_t) {
-      .x = ship_chunk_id.x - current_chunk_id.x,
-      .y = ship_chunk_id.y - current_chunk_id.y,
-      .z = ship_chunk_id.z - current_chunk_id.z
+    chunk_coord_t ship_chunk_coord = world_server->players[iter_id].ship.abs_coord;
+    chunk_coord_t rel_chunk_coord = (chunk_coord_t) {
+      .x = ship_chunk_coord.x - self_abs_coord.x,
+      .y = ship_chunk_coord.y - self_abs_coord.y,
+      .z = ship_chunk_coord.z - self_abs_coord.z
     };
-    if (in_neighborhood(rel_chunk_id)) {
-      int ship_chunk_idx = CUBE_NUM / 2
-      + 1 * (int) rel_chunk_id.x
-      + 3 * (int) rel_chunk_id.y
-      + 9 * (int) rel_chunk_id.z;
+    if (in_neighborhood(rel_chunk_coord)) {
+      int ship_cube_idx = CUBE_NUM / 2
+      + 1 * (int) rel_chunk_coord.x
+      + 3 * (int) rel_chunk_coord.y
+      + 9 * (int) rel_chunk_coord.z;
 
       if (iter_id == id) {
-        snapshot.self = snapshot.ship_chunks[ship_chunk_idx].objects + snapshot.ship_chunks[ship_chunk_idx].num_objects;
+        snapshot.self = snapshot.ship_chunks[ship_cube_idx].objects + snapshot.ship_chunks[ship_cube_idx].num_objects;
       }
-      snapshot.ship_chunks[ship_chunk_idx].objects[snapshot.ship_chunks[ship_chunk_idx].num_objects++] = world_server->players[iter_id].self;
+      snapshot.ship_chunks[ship_cube_idx].objects[snapshot.ship_chunks[ship_cube_idx].num_objects++] = world_server->players[iter_id];
     }
     MTX_UNLOCK(world_server->player_mtxs + iter_id);
   }
   MTX_UNLOCK(&(world_server->active_ids_mtx));
 
-  gather_chunks(snapshot.chunks, current_chunk_id);
-  snapshot.encoded_chunk_id = encode_chunk_id(current_chunk_id);
+  gather_chunks(snapshot.chunks, self_abs_coord);
   return snapshot;
 }

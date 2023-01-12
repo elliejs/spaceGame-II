@@ -16,17 +16,30 @@ void promote(cache_item_t * item) {
   world_server->world_db.head = item;
 }
 
-void generate_chunk(unsigned int encoded_id, cache_item_t * item) {
+void generate_chunk(chunk_coord_t abs_coord, cache_item_t * item) {
   item->chunk.num_objects = 2;
   item->chunk.num_lights = 1;
-
+  unsigned int enc_chunk_id = encode_chunk_coord(abs_coord);
+  srand(enc_chunk_id);
+  oklab_t planet_color = linear_srgb_to_oklab((rgb_t) {((rand() % 100) / 100.), ((rand() % 100) / 100.), ((rand() % 100) / 100.)});
   item->objects[0] = create_planet(
     (SGVec3D_t) {
       .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
       .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
       .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
     },
-    SGVec_Load_Const(50.)
+    SGVec_Load_Const(50.),
+    SGVec_Load_Const(20.),
+    (SGVecOKLAB_t) {
+      .l = SGVec_Load_Const(0.2),
+      .a = SGVec_Load_Const(planet_color.a),
+      .b = SGVec_Load_Const(planet_color.b)
+    },
+    (SGVec3D_t) {
+      .x = SGVec_Load_Const(rand() % NOISE_DOMAIN_SIZE),
+      .y = SGVec_Load_Const(rand() % NOISE_DOMAIN_SIZE),
+      .z = SGVec_Load_Const(rand() % NOISE_DOMAIN_SIZE)
+    }
   );
   item->objects[1] = create_star(
     (SGVec3D_t) {
@@ -52,12 +65,12 @@ compare_t cache_comparator(void * a, void * b) {
   ;
 }
 
-unsigned int encode_chunk_id(chunk_id_t id) {
-  return id.x ^ id.y ^ id.z;
+unsigned int encode_chunk_coord(chunk_coord_t abs_coord) {
+  return abs_coord.x ^ abs_coord.y ^ abs_coord.z ^ 0xCAFEBABE;
 }
 
-chunk_t * gather_chunk(chunk_id_t id) {
-  unsigned int encoded_id = encode_chunk_id(id);
+chunk_t * gather_chunk(chunk_coord_t abs_coord) {
+  unsigned int encoded_id = encode_chunk_coord(abs_coord);
   cache_item_t dummy = (cache_item_t) {
     .prev = NULL,
     .next = NULL,
@@ -76,7 +89,7 @@ chunk_t * gather_chunk(chunk_id_t id) {
       item->instantiated = true;
     }
     item->encoded_id = encoded_id;
-    generate_chunk(encoded_id, item);
+    generate_chunk(abs_coord, item);
     insert(&(world_server->world_db.search_tree), (void *) item, &(item->search_node));
   }
 
@@ -86,15 +99,15 @@ chunk_t * gather_chunk(chunk_id_t id) {
   return &(item->chunk);
 }
 
-void gather_chunks(chunk_t ** chunk_storage, chunk_id_t chunk_id) {
+void gather_chunks(chunk_t ** chunk_storage, chunk_coord_t abs_coord) {
   int x = 0;
   for (int i = -1; i <= 1; i++) {
     for (int j = -1; j <= 1; j++) {
       for (int k = -1; k <= 1; k++) {
-        chunk_storage[x++] = gather_chunk((chunk_id_t) {
-          .x = chunk_id.x + (unsigned int) k,
-          .y = chunk_id.y + (unsigned int) j,
-          .z = chunk_id.z + (unsigned int) i
+        chunk_storage[x++] = gather_chunk((chunk_coord_t) {
+          .x = abs_coord.x + (unsigned int) k,
+          .y = abs_coord.y + (unsigned int) j,
+          .z = abs_coord.z + (unsigned int) i
         });
       }
     }

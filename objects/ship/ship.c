@@ -1,18 +1,19 @@
 #include "ship.h"
+#include "../../world/world_control.h"
 
 static
-SGVec distance(object_t * self, SGVec3D_t point, int chunk_idx) {
-  SGVec3D_t chunk_offset = get_chunk_offset(chunk_idx);
+SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx) {
+  SGVec3D_t cube_offset = get_cube_offset(cube_idx);
 
   point = (SGVec3D_t) {
-    .x = SGVec_Sub_SGVec(point.x, SGVec_Add_SGVec(self->origin.x, chunk_offset.x)),
-    .y = SGVec_Sub_SGVec(point.y, SGVec_Add_SGVec(self->origin.y, chunk_offset.y)),
-    .z = SGVec_Sub_SGVec(point.z, SGVec_Add_SGVec(self->origin.z, chunk_offset.z))
+    .x = SGVec_Sub_SGVec(point.x, SGVec_Add_SGVec(self->origin.x, cube_offset.x)),
+    .y = SGVec_Sub_SGVec(point.y, SGVec_Add_SGVec(self->origin.y, cube_offset.y)),
+    .z = SGVec_Sub_SGVec(point.z, SGVec_Add_SGVec(self->origin.z, cube_offset.z))
   };
 
-  point = rot_vec3d(SGVec4D_Invert(self->ship.rot_quats.forward), point);
   point = rot_vec3d(SGVec4D_Invert(self->ship.rot_quats.up), point);
-  point = rot_vec3d(SGVec4D_Invert(self->ship.rot_quats.right), point);
+  point = rot_vec3d(SGVec4D_Invert(self->ship.rot_quats.forward), point);
+  // point = rot_vec3d(SGVec4D_Invert(self->ship.rot_quats.right), point);
 
   point = (SGVec3D_t) {
     .x = SGVec_Absolute(point.x),
@@ -93,8 +94,8 @@ SGVec distance(object_t * self, SGVec3D_t point, int chunk_idx) {
 }
 
 static
-SGVecOKLAB_t color(object_t * self, SGVec3D_t point, int chunk_idx) {
-  const oklab_t basis = linear_srgb_to_oklab((rgb_t) {0.5, 0.0, 0.0});
+SGVecOKLAB_t color(object_t * self, SGVec3D_t point) {
+  const oklab_t basis = linear_srgb_to_oklab((rgb_t) {0.0, 0.5, 0.0});
   return (SGVecOKLAB_t) {
     .l = SGVec_Load_Const(basis.l),
     .a = SGVec_Load_Const(basis.a),
@@ -102,7 +103,7 @@ SGVecOKLAB_t color(object_t * self, SGVec3D_t point, int chunk_idx) {
   };
 }
 
-object_t create_ship(SGVec3D_t origin) {
+object_t create_ship(SGVec3D_t origin, chunk_coord_t abs_coord) {
   return (object_t) {
     .origin = origin,
     .radius = SGVec_Load_Const(30),
@@ -114,6 +115,8 @@ object_t create_ship(SGVec3D_t origin) {
       .lb = SGVec_Load_Const(12.),
       .height = SGVec_Load_Const(1.),
       .rot_quats = DEFAULT_ROT_QUAT,
+      .vision = STANDARD,
+      .abs_coord = abs_coord
     }
   };
 }

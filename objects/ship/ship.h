@@ -2,6 +2,7 @@
 #define SHIP_H
 
 #include "../../math/vector_3d.h"
+#include "../../world/chunk.h"
 
 typedef
 struct orientation_s {
@@ -26,12 +27,14 @@ struct ship_s {
   SGVec height;
   SGVec la;
   SGVec lb;
+  unsigned int vision;
+  chunk_coord_t abs_coord;
 }
 ship_t;
 
 #include "../object.h"
 
-object_t create_ship(SGVec3D_t origin);
+object_t create_ship(SGVec3D_t origin, chunk_coord_t abs_coord);
 
 #define DEFAULT_ORIENTATION \
 (orientation_t) { \
