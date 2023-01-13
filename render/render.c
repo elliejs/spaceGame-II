@@ -319,23 +319,10 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
 
   if (lanes_true(march_result.validity)) { //all pixels colored
     SGVec mag_squared = SGVecOKLAB_dot(colors, colors);
-    SGVecShort max_mag_temp = SGVecShort_Fold_Max(SGVec_Bottom_Short(mag_squared), SGVec_Top_Short(mag_squared));
-    float max_mag = SGVecShort_Get_Lane(SGVecShort_Fold_Max(max_mag_temp, max_mag_temp), 0);
-
-    SGVecShort min_mag_temp = SGVecShort_Fold_Min(SGVec_Bottom_Short(mag_squared), SGVec_Top_Short(mag_squared));
-    float min_mag = SGVecShort_Get_Lane(SGVecShort_Fold_Min(min_mag_temp, min_mag_temp), 0);
-
-    float avg_mag = (min_mag + max_mag) / (float) 2.;
-
-    // SGVecShort max_mag_temp = SGVecShort_Fold_Max(SGVec_Bottom_Short(color.l), SGVec_Top_Short(color.l));
-    // float max_mag = SGVecShort_Get_Lane(SGVecShort_Fold_Max(max_mag_temp, max_mag_temp), 0);
-    //
-    // SGVecShort min_mag_temp = SGVecShort_Fold_Min(SGVec_Bottom_Short(color.l), SGVec_Top_Short(color.l));
-    // float min_mag = SGVecShort_Get_Lane(SGVecShort_Fold_Min(min_mag_temp, min_mag_temp), 0);
-    //
-    // float avg_mag = (min_mag + max_mag) / (float) 2.;
-
-    // printf("l_arr[0-3] lab_l[0-3], max_l, min_l, avg_l: %f %f %f %f / %f %f %f %f / %f %f %f\n", l_arr[0], l_arr[1], l_arr[2], l_arr[3], color_l[0], color_l[1], color_l[2], color_l[3], max_l, min_l, avg_l);
+    float mag_squared_arr[4];  SGVec_Store_Array(mag_squared_arr, mag_squared);
+    float avg_mag = 0.;
+    for (int i = 0; i < 4; i++) {avg_mag += mag_squared_arr[i];}
+    avg_mag /= 4.;
 
     for (int i = 0; i < 4; i++) {
       float i_mag = color_l[i] * color_l[i] + color_a[i] * color_a[i] + color_b[i] * color_b[i];

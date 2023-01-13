@@ -24,9 +24,9 @@ void request_thrust(unsigned int id, float amt) {
       )
   };
 
-  float x = SGVec_Get_Lane(world_server->players[id].origin.x, 0);
-  float y = SGVec_Get_Lane(world_server->players[id].origin.y, 0);
-  float z = SGVec_Get_Lane(world_server->players[id].origin.z, 0);
+  float x = SGVec_First_Lane(world_server->players[id].origin.x);
+  float y = SGVec_First_Lane(world_server->players[id].origin.y);
+  float z = SGVec_First_Lane(world_server->players[id].origin.z);
 
   world_server->players[id].ship.abs_coord.x += (x >= CHUNK_SIZE) - (x < 0);
   world_server->players[id].ship.abs_coord.y += (y >= CHUNK_SIZE) - (y < 0);
