@@ -99,7 +99,9 @@ inline
 int MTX_INIT(pthread_mutex_t * X) {
   pthread_mutexattr_t attr;
   pthread_mutexattr_init(&attr);
+#if defined(__APPLE__)
   pthread_mutexattr_setpolicy_np(&attr, PTHREAD_MUTEX_POLICY_FAIRSHARE_NP);
+#endif
   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
   pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
 

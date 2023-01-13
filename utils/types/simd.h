@@ -55,7 +55,7 @@
 
 //STORE
   //float
-#   define SGVec_Store_Array(X, Y)              _mm_store_ps((Y), (X))
+#   define SGVec_Store_Array(X, Y)              _mm_store_ps((X), (Y))
 #   define SGVec_First_Lane(X)                  _mm_cvtss_f32((X))
 
   //int
