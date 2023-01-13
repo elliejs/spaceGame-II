@@ -3,7 +3,7 @@ OFILES = $(CFILES:.c=.o)
 OBJDIR = build
 OFILESFLAT = $(addprefix $(OBJDIR)/,$(notdir $(OFILES)))
 LFLAGS = -lssh -lm
-CFLAGS = -Wunused
+CFLAGS = -Wunused -msse4.2 -Wno-unused-command-line-argument
 
 spacegame : $(OFILES)
 	$(CC) $(OFILESFLAT) -o spaceGame $(LFLAGS)

@@ -297,7 +297,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
       // printf("unobstructed_rays: %x %x %x %x\n\n", SGVecUInt_Get_Lane(unobstructed_rays, 0), SGVecUInt_Get_Lane(unobstructed_rays, 1), SGVecUInt_Get_Lane(unobstructed_rays, 2), SGVecUInt_Get_Lane(unobstructed_rays, 3));
 
       SGVecOKLAB_t star_color = light->star.radiance(&(light->star), dists);
-      SGVec sub_pixel_luminence = SGVecUInt_Ternary(unobstructed_rays, alignment, SGVec_ZERO);
+      SGVec sub_pixel_luminence = SGVec_Ternary(unobstructed_rays, alignment, SGVec_ZERO);
       // SGVec sub_pixel_luminence = SGVec_Maximum(alignment, SGVec_ZERO);
       colors = (SGVecOKLAB_t) {
         .l = SGVec_Add_Mult_SGVec(colors.l, sub_pixel_luminence, star_color.l),

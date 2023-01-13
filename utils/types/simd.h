@@ -158,14 +158,20 @@
 #   define SGVecUInt_And(X, Y)                  _mm_and_si128((X), (Y))
 #   define SGVecUInt_Xor(X, Y)                  _mm_xor_si128((X), (Y))
 
+//CAST
+  //float
+# define SGVecUInt_Cast_SGVec(X)                _mm_castps_si128((X))
+  //int
+# define SGVec_Cast_SGVecUInt(X)                _mm_castsi128_ps((X))
+
 //CONDITIONAL
   //float
-#   define SGVec_Less_Than(X, Y)                _mm_cmplt_ps((X), (Y))
-#   define SGVec_Less_Or_Eq_Than(X, Y)          _mm_cmple_ps((X), (Y))
-#   define SGVec_Gtr_Than(X, Y)                 _mm_cmpgt_ps((X), (Y))
-#   define SGVec_Gtr_Or_Eq_Than(X, Y)           _mm_cmpge_ps((X), (Y))
+#   define SGVec_Less_Than(X, Y)                SGVecUInt_Cast_SGVec(_mm_cmplt_ps((X), (Y)))
+#   define SGVec_Less_Or_Eq_Than(X, Y)          SGVecUInt_Cast_SGVec(_mm_cmple_ps((X), (Y)))
+#   define SGVec_Gtr_Than(X, Y)                 SGVecUInt_Cast_SGVec(_mm_cmpgt_ps((X), (Y)))
+#   define SGVec_Gtr_Or_Eq_Than(X, Y)           SGVecUInt_Cast_SGVec(_mm_cmpge_ps((X), (Y)))
 
-#   define SGVec_Ternary(X, Y, Z)               _mm_blendv_ps((Y), (Z), (X))
+#   define SGVec_Ternary(X, Y, Z)               _mm_blendv_ps((Y), (Z), SGVec_Cast_SGVecUInt((X)))
   //int
 #   define SGVecUInt_Ternary(X, Y, Z)           _mm_blendv_epi8((Y), (Z), (X))
 #endif
