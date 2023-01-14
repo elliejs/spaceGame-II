@@ -3,6 +3,6 @@
 
 #include "palette.h"
 
-extern const palette_t duel;
+palette_t duel_init();
 
 #endif /* end of include guard: DUEL_H */
