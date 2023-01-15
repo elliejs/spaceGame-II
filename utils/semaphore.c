@@ -24,3 +24,13 @@ extern inline
 int MTX_UNLOCK(pthread_mutex_t * X);
 extern inline
 int MTX_DESTROY(pthread_mutex_t * X);
+extern inline
+int COND_INIT(pthread_cond_t * X);
+extern inline
+int COND_SIGNAL(pthread_cond_t * X);
+extern inline
+int COND_BROADCAST(pthread_cond_t * X);
+extern inline
+int COND_WAIT(pthread_cond_t * X, pthread_mutex_t * Y);
+extern inline
+int COND_DESTROY(pthread_cond_t * X);

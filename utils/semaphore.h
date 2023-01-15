@@ -99,10 +99,10 @@ inline
 int MTX_INIT(pthread_mutex_t * X) {
   pthread_mutexattr_t attr;
   pthread_mutexattr_init(&attr);
-#if defined(__APPLE__)
-  pthread_mutexattr_setpolicy_np(&attr, PTHREAD_MUTEX_POLICY_FAIRSHARE_NP);
-#endif
-  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+// #if defined(__APPLE__)
+//   pthread_mutexattr_setpolicy_np(&attr, PTHREAD_MUTEX_POLICY_FAIRSHARE_NP);
+// #endif
+  // pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
   pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
 
   int R = pthread_mutex_init(X, &attr);
@@ -138,5 +138,54 @@ int MTX_DESTROY(pthread_mutex_t * X) {
   #endif
   return R;
 }
+
+inline
+int COND_INIT(pthread_cond_t * X) {
+  pthread_condattr_t attr;
+  pthread_condattr_init(&attr);
+  pthread_condattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+  int R = pthread_cond_init(X, &attr);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] COND INIT: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+inline
+int COND_SIGNAL(pthread_cond_t * X) {
+  int R = pthread_cond_signal(X);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] COND SIGNAL: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+inline
+int COND_BROADCAST(pthread_cond_t * X) {
+  int R = pthread_cond_broadcast(X);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] COND BROADCAST: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+inline
+int COND_WAIT(pthread_cond_t * X, pthread_mutex_t * Y) {
+  int R = pthread_cond_wait(X, Y);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] COND WAIT: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+inline
+int COND_DESTROY(pthread_cond_t * X) {
+  int R = pthread_cond_destroy(X);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] COND WAIT: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
 
 #endif /* end of include guard: SEMAPHORE_H */
