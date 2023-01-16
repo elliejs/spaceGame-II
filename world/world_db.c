@@ -16,13 +16,13 @@ void promote(cache_item_t * item) {
   world_server->world_db.head = item;
 }
 
-void generate_chunk(chunk_coord_t abs_coord, cache_item_t * item) {
-  item->chunk.num_objects = 2;
-  item->chunk.num_lights = 1;
+void generate_chunk(chunk_coord_t abs_coord, chunk_t * chunk) {
+  chunk->num_objects = 2;
+  chunk->num_lights = 1;
   unsigned int enc_chunk_id = encode_chunk_coord(abs_coord);
   srand(enc_chunk_id);
   oklab_t planet_color = linear_srgb_to_oklab((rgb_t) {((rand() % 100) / 100.), ((rand() % 100) / 100.), ((rand() % 100) / 100.)});
-  item->objects[0] = create_planet(
+  chunk->objects[0] = create_planet(
     (SGVec3D_t) {
       .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
       .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
@@ -41,7 +41,7 @@ void generate_chunk(chunk_coord_t abs_coord, cache_item_t * item) {
       .z = SGVec_Load_Const(rand() % NOISE_DOMAIN_SIZE)
     }
   );
-  item->objects[1] = create_star(
+  chunk->objects[1] = create_star(
     (SGVec3D_t) {
       .x = SGVec_Load_Const(CHUNK_SIZE * 0.75),
       .y = SGVec_Load_Const(CHUNK_SIZE * 0.75),
@@ -50,7 +50,8 @@ void generate_chunk(chunk_coord_t abs_coord, cache_item_t * item) {
     SGVec_Load_Const(50.)
   );
 
-  item->lights[0] = item->objects + 1;
+  chunk->lights[0] = chunk->objects + 1;
+  RWLOCK_INIT(&(chunk->rwlock));
 }
 
 compare_t cache_comparator(void * a, void * b) {
@@ -76,10 +77,10 @@ chunk_t * gather_chunk(chunk_coord_t abs_coord) {
     .next = NULL,
     .encoded_id = encoded_id
   };
-  MTX_LOCK(&(world_server->world_db.db_mtx));
   aa_node_t * cache_node;
+  chunk_t * ret_chunk;
+  MTX_LOCK(&(world_server->world_db.db_mtx));
   cache_item_t * item = world_server->world_db.tail;
-
   if (find(&(world_server->world_db.search_tree), (void *) &dummy, &cache_node)) {
     item = (cache_item_t *) cache_node->data;
   } else {
@@ -89,14 +90,18 @@ chunk_t * gather_chunk(chunk_coord_t abs_coord) {
       item->instantiated = true;
     }
     item->encoded_id = encoded_id;
-    generate_chunk(abs_coord, item);
     insert(&(world_server->world_db.search_tree), (void *) item, &(item->search_node));
+    RWLOCK_WLOCK(&(item->chunk.rwlock));
+    generate_chunk(abs_coord, &(item->chunk));
+    RWLOCK_WUNLOCK(&(item->chunk.rwlock));
   }
 
   promote(item);
 
+  RWLOCK_RLOCK(&(item->chunk.rwlock));
+  ret_chunk = &(item->chunk);
   MTX_UNLOCK(&(world_server->world_db.db_mtx));
-  return &(item->chunk);
+  return ret_chunk;
 }
 
 void gather_chunks(chunk_t ** chunk_storage, chunk_coord_t abs_coord) {
@@ -117,6 +122,7 @@ void gather_chunks(chunk_t ** chunk_storage, chunk_coord_t abs_coord) {
 void start_world_db(world_db_t * world_db) {
   MTX_INIT(&(world_db->db_mtx));
 
+
   world_db->head = world_db->backing_data;
   world_db->backing_data[0] = (cache_item_t) {
     .prev = NULL,
@@ -124,12 +130,13 @@ void start_world_db(world_db_t * world_db) {
       .objects = world_db->backing_data[0].objects,
       .lights = world_db->backing_data[0].lights,
       .num_objects = 0,
-      .num_lights = 0
+      .num_lights = 0,
     },
     .next = world_db->backing_data + 1,
 
     .instantiated = false
   };
+  RWLOCK_INIT(&(world_db->backing_data[0].chunk.rwlock));
 
   for(int i = 1; i < CACHE_LEN - 1; i++) {
     world_db->backing_data[i] = (cache_item_t) {
@@ -144,6 +151,7 @@ void start_world_db(world_db_t * world_db) {
 
       .instantiated = false
     };
+    RWLOCK_INIT(&(world_db->backing_data[i].chunk.rwlock));
   }
 
   world_db->backing_data[CACHE_LEN - 1] = (cache_item_t) {
@@ -158,6 +166,7 @@ void start_world_db(world_db_t * world_db) {
 
     .instantiated = false
   };
+  RWLOCK_INIT(&(world_db->backing_data[CACHE_LEN - 1].chunk.rwlock));
   world_db->tail = world_db->backing_data + CACHE_LEN - 1;
 
   world_db->search_tree = (aa_tree_t) {
@@ -170,7 +179,6 @@ void start_world_db(world_db_t * world_db) {
     },
     .root = &(world_db->search_tree.nil)
   };
-
 }
 
 void end_world_db(world_db_t * world_db) {

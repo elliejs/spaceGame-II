@@ -80,10 +80,11 @@ bool in_neighborhood(chunk_coord_t a) {
   ;
 }
 
-void destroy_snapshot(world_snapshot_t snapshot) {
+void destroy_snapshot(world_snapshot_t * snapshot) {
   for(int i = 0; i < CUBE_NUM; i++) {
-    free(snapshot.ship_chunks[i].objects);
-    free(snapshot.ship_chunks[i].lights);
+    RWLOCK_RUNLOCK(&(snapshot->chunks[i]->rwlock));
+    free(snapshot->ship_chunks[i].objects);
+    free(snapshot->ship_chunks[i].lights);
   }
 }
 

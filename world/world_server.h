@@ -38,6 +38,8 @@ extern SGVec3D_t chunk_offsets[CUBE_NUM];
 
 typedef
 struct chunk_s {
+  pthread_rwlock_t rwlock;
+
   unsigned int num_objects;
   object_t * objects;
 
@@ -76,7 +78,7 @@ void start_world_server();
 void end_world_server();
 
 world_snapshot_t request_snapshot(unsigned int id);
-void destroy_snapshot(world_snapshot_t);
+void destroy_snapshot(world_snapshot_t *);
 
 void request_player(unsigned int id);
 void request_player_end(unsigned int id);

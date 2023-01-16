@@ -275,6 +275,7 @@ void blit() {
   printf("A\n");
   SEM_WAITVAL(render_client.job_sem, 1, NUM_THREADS);
   printf("B\n");
+  destroy_snapshot(&(render_client.snapshot));
   // for (int i = 0; i < render_client.width * render_client.height; i++) {
   //   if (render_client.framebuffer[i].fore >= render_client.num_colors || render_client.framebuffer[i].back >= render_client.num_colors) {
   //   }
@@ -306,9 +307,8 @@ void * render_task(void * nothing) {
     printf("[render_client %u]: shlept\n", id);
     blit();
     MTX_UNLOCK(&(render_client.dim_mtx));
-
     printf("[render_client %u]: blitted\n", id);
-    destroy_snapshot(render_client.snapshot);
+
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_testcancel();
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);

@@ -11,27 +11,32 @@
 
 typedef
 struct cache_item_s {
+  //db_mtx protected
   struct cache_item_s * prev;
+  struct cache_item_s * next;
+  aa_node_t search_node;
+  unsigned int encoded_id;
+  bool instantiated;
+
+  //db_cache_rwlock protected
+  pthread_rwlock_t db_cache_item_rwlock;
   chunk_t chunk;
   object_t objects[MAX_OBJECTS + MAX_LIGHTS];
   object_t * lights[MAX_LIGHTS];
-  unsigned int encoded_id;
-  struct cache_item_s * next;
-
-  aa_node_t search_node;
-
-  bool instantiated;
 }
 cache_item_t;
 
 typedef
 struct world_db_s {
-  cache_item_t backing_data[CACHE_LEN];
+  pthread_mutex_t db_mtx;
+
+  //db_mtx protected
   cache_item_t * head;
   cache_item_t * tail;
   aa_tree_t search_tree;
 
-  pthread_mutex_t db_mtx;
+  //db_cache_rwlock protected
+  cache_item_t backing_data[CACHE_LEN];
 }
 world_db_t;
 

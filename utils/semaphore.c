@@ -34,3 +34,15 @@ extern inline
 int COND_WAIT(pthread_cond_t * X, pthread_mutex_t * Y);
 extern inline
 int COND_DESTROY(pthread_cond_t * X);
+extern inline
+int RWLOCK_INIT(pthread_rwlock_t * X);
+extern inline
+int RWLOCK_RLOCK(pthread_rwlock_t * X);
+extern inline
+int RWLOCK_RUNLOCK(pthread_rwlock_t * X);
+extern inline
+int RWLOCK_WLOCK(pthread_rwlock_t * X);
+extern inline
+int RWLOCK_WUNLOCK(pthread_rwlock_t * X);
+extern inline
+int RWLOCK_DESTROY(pthread_rwlock_t * X);

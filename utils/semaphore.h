@@ -187,5 +187,63 @@ int COND_DESTROY(pthread_cond_t * X) {
   return R;
 }
 
+inline
+int RWLOCK_INIT(pthread_rwlock_t * X) {
+  pthread_rwlockattr_t attr;
+  pthread_rwlockattr_init(&attr);
+  pthread_rwlockattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+  int R = pthread_rwlock_init(X, &attr);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] WRLOCK INIT: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+inline
+int RWLOCK_RLOCK(pthread_rwlock_t * X) {
+  int R = pthread_rwlock_rdlock(X);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] RWLOCK RLOCK: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+inline
+int RWLOCK_RUNLOCK(pthread_rwlock_t * X) {
+  int R = pthread_rwlock_unlock(X);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] RWLOCK RUNLOCK: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+inline
+int RWLOCK_WLOCK(pthread_rwlock_t * X) {
+  int R = pthread_rwlock_wrlock(X);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] RWLOCK WLOCK: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+inline
+int RWLOCK_WUNLOCK(pthread_rwlock_t * X) {
+  int R = pthread_rwlock_unlock(X);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] RWLOCK WUNLOCK: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+inline
+int RWLOCK_DESTROY(pthread_rwlock_t * X) {
+  int R = pthread_rwlock_destroy(X);
+  #if defined(SG_DEBUG)
+    if (R != 0) printf("[ERROR] RWLOCK DESTROY: %s\n", strerror(R));
+  #endif
+  return R;
+}
+
+
 
 #endif /* end of include guard: SEMAPHORE_H */
