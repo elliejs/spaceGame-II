@@ -14,7 +14,7 @@ OPTIMIZED :
 optimized : OPTIMIZED spacegame
 
 DEBUG :
-	$(eval CFLAGS := $(CFLAGS) -D SG_DEBUG)
+	$(eval CFLAGS := $(CFLAGS) -D SG_DEBUG -g3)
 
 debug : DEBUG spacegame
 

@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include <sys/mman.h>
+#include <sys/wait.h>
 #include <time.h>
 
 #include <libssh/server.h>
