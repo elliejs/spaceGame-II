@@ -16,21 +16,25 @@ The graphics pipeline is based around a ray marcher, which includes occlusive sh
 ## Running your own SpaceGame Server
 
 ### Building:
+Change the include flag in [simd.h](utils/types/simd.h) from *ARM* to *INTEL* or *AMD*. *SSE4.2* and below SIMD extensions must be available to compile.
 
 There are many build targets available with make.
 
 - **make**: With no args, make creates a medium performance build without cleaning.
 - **all**: Cleans the directory and rebuilds medium performance.
 - **optimized**: Builds at optimization level 3, and with fast-math.
-- **debug**: Builds with debug flags enabled, which add some more server-side print statements.
+- **debug**: Builds with debug flags enabled, which add some more server-side print statements. Also enables `-g3` GNU debug headers.
 - **clean**: removes all object files.
 - **help**: prints all targets
 
 ### Dependencies:
 
 - [libssh](https://www.libssh.org/)
+  - available through apt as libssh-dev and I'm sure practically every package manager has an option too.
 
 ### Running
+
+- make sure server keys are populated by running [keygen.sh](keygen.sh) (as `bash`)
 
 - run the server as: `./spaceGame [optional IPv4 bindaddr]`
 
@@ -39,6 +43,7 @@ There are many build targets available with make.
 ### Supported Platforms
 
 - ARMv8 with NEON SIMD
+- x86_64 with SSE4.2
 
 ---
 
@@ -49,6 +54,8 @@ There are many build targets available with make.
 - [X] ~~runtime bindaddr selection~~
 - [X] ~~Makefile for ease of building and configuration~~
   - **[FIX]** [Makefile](Makefile)
+- [X] ~~x86_64 Support~~
+  - While this is still in progress, spaceGame can now compile and vaguely run on x86_64 which is a huge success. More development is required, and will be the upcoming focus.
 - [ ] ~~Move from SIMD to Vulkan, to make more platforms available~~
   - **[WONT DO]** Since Vulkan requires so much boilerplate and GPU ray-marching isn't optimizable anyway, this has been forgone in favor of just buying more threads and cpus.
 - [ ] Persistent user profiles.
