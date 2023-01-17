@@ -12,7 +12,7 @@ SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx) {
   SGVec3D_t planetary_offset = SGVec3D_Add_SGVec3D(SGVec3D_Sub_SGVec3D(point, rel_offset), self->planet.pos_hash);
 
   SGVecUInt lod = SGVec_Gtr_Than(dist_to_center, SGVec_Add_SGVec(self->radius, self->planet.noise_amplitude));
-  unsigned int lod_array[4]; SGVecUInt_Store_Array(lod_array, lod);
+  uint32_t lod_array[4]; SGVecUInt_Store_Array(lod_array, lod);
 
   float absolute_x[4]; SGVec_Store_Array(absolute_x, planetary_offset.x);
   float absolute_y[4]; SGVec_Store_Array(absolute_y, planetary_offset.y);
