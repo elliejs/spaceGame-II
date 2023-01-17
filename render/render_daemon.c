@@ -112,9 +112,9 @@ void * pixel_task(void * nothing) {
       MTX_LOCK(&(render_client.job_mtx));
       // printf("%d lock mtx success\n", tid);
       while ((job = render_client.pixel_jobs_back) == NULL) {
-        printf("%d start waiting\n", tid);
+        // printf("%d start waiting\n", tid);
         COND_WAIT(&(render_client.job_cond), &(render_client.job_mtx));
-        printf("%d end waiting\n", tid);
+        // printf("%d end waiting\n", tid);
       }
       render_client.pixel_jobs_back = job->prev;
       // COND_SIGNAL(&(render_client.job_cond));
@@ -141,7 +141,7 @@ void * pixel_task(void * nothing) {
     // printf("%d telomere escaped\n", tid);
     free(job);
     SEM_POST(render_client.job_sem, 1);
-    printf("%d posted its telomere\n", tid);
+    // printf("%d posted its telomere\n", tid);
     // MTX_LOCK(&(render_client.job_mtx));
     // printf("%d telomere locked\n", tid);
     // COND_SIGNAL(&(render_client.job_cond));
@@ -235,12 +235,12 @@ void enqueue_render() {
       render_client.pixel_jobs_back = job;
 
     render_client.pixel_jobs_front = job;
-    printf("telomere job queued\n");
+    // printf("telomere job queued\n");
     // COND_SIGNAL(&(render_client.job_cond));
     MTX_UNLOCK(&(render_client.job_mtx));
   }
   MTX_LOCK(&(render_client.job_mtx));
-  printf("Broadcasting\n");
+  // printf("Broadcasting\n");
   COND_BROADCAST(&(render_client.job_cond));
   MTX_UNLOCK(&(render_client.job_mtx));
 }
@@ -272,9 +272,7 @@ void render_daemon_request_dimensions(int width, int height) {
 
 static inline
 void blit() {
-  printf("A\n");
   SEM_WAITVAL(render_client.job_sem, 1, NUM_THREADS);
-  printf("B\n");
   destroy_snapshot(&(render_client.snapshot));
   // for (int i = 0; i < render_client.width * render_client.height; i++) {
   //   if (render_client.framebuffer[i].fore >= render_client.num_colors || render_client.framebuffer[i].back >= render_client.num_colors) {
@@ -288,7 +286,6 @@ void blit() {
     written += ssh_channel_write(render_client.channel, render_client.stream_buffer + written, len - written);
     printf("written (after: %u)\n", written);
   }
-  printf("d\n");
 }
 
 static

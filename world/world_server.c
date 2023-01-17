@@ -107,7 +107,6 @@ void request_snapshot(world_snapshot_t * snapshot, unsigned int id) {
 
   for (int i = 0; i < world_server->active_ids.num; i++) {
     unsigned int iter_id = world_server->active_ids.data[i];
-    printf("ship id %d requesting ship id %d\n", id, iter_id);
     MTX_LOCK(world_server->player_mtxs + iter_id);
     chunk_coord_t ship_chunk_coord = world_server->players[iter_id].ship.abs_coord;
     chunk_coord_t rel_chunk_coord = (chunk_coord_t) {
