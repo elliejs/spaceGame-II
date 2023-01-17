@@ -297,7 +297,7 @@ void * render_task(void * nothing) {
   unsigned int id = render_client.id;
   for (;;) {
     printf("[render_client %u]: top loop\n", id);
-    render_client.snapshot = request_snapshot(id);
+    request_snapshot(&(render_client.snapshot), id);
     printf("[render_client %u]: snapshotted\n", id);
     MTX_LOCK(&(render_client.dim_mtx));
     printf("[render_client %u]: dims locked\n", id);

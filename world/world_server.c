@@ -88,23 +88,21 @@ void destroy_snapshot(world_snapshot_t * snapshot) {
   }
 }
 
-world_snapshot_t request_snapshot(unsigned int id) {
-  world_snapshot_t snapshot;
-
+void request_snapshot(world_snapshot_t * snapshot, unsigned int id) {
   MTX_LOCK(world_server->player_mtxs + id);
   chunk_coord_t self_abs_coord = world_server->players[id].ship.abs_coord;
   MTX_UNLOCK(world_server->player_mtxs + id);
 
   MTX_LOCK(&(world_server->active_ids_mtx));
   for(int i = 0; i < CUBE_NUM; i++) {
-    snapshot.ship_chunks[i] = (chunk_t) {
+    snapshot->ship_chunks[i] = (chunk_t) {
       .num_objects = 0,
       .objects = malloc(world_server->active_ids.num * sizeof(object_t)),
       .num_lights = 0,
       .lights = malloc(0)
     };
 
-    snapshot.chunks[CUBE_NUM + i] = snapshot.ship_chunks + i;
+    snapshot->chunks[CUBE_NUM + i] = snapshot->ship_chunks + i;
   }
 
   for (int i = 0; i < world_server->active_ids.num; i++) {
@@ -124,14 +122,13 @@ world_snapshot_t request_snapshot(unsigned int id) {
       + 9 * (int) rel_chunk_coord.z;
 
       if (iter_id == id) {
-        snapshot.self = snapshot.ship_chunks[ship_cube_idx].objects + snapshot.ship_chunks[ship_cube_idx].num_objects;
+        snapshot->self = snapshot->ship_chunks[ship_cube_idx].objects + snapshot->ship_chunks[ship_cube_idx].num_objects;
       }
-      snapshot.ship_chunks[ship_cube_idx].objects[snapshot.ship_chunks[ship_cube_idx].num_objects++] = world_server->players[iter_id];
+      snapshot->ship_chunks[ship_cube_idx].objects[snapshot->ship_chunks[ship_cube_idx].num_objects++] = world_server->players[iter_id];
     }
     MTX_UNLOCK(world_server->player_mtxs + iter_id);
   }
   MTX_UNLOCK(&(world_server->active_ids_mtx));
 
-  gather_chunks(snapshot.chunks, self_abs_coord);
-  return snapshot;
+  gather_chunks(snapshot->chunks, self_abs_coord);
 }
