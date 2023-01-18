@@ -64,7 +64,7 @@
 #   define SGVec_First_Lane(X)                  _mm_cvtss_f32((X))
 
   //int
-#   define SGVecUInt_Store_Array(X, Y)          _mm_storeu_epi32((X), (Y))
+#   define SGVecUInt_Store_Array(X, Y)          _mm_storeu_si128((X), (Y))
 #endif
 
 //float
