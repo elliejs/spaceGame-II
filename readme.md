@@ -16,8 +16,6 @@ The graphics pipeline is based around a ray marcher, which includes occlusive sh
 ## Running your own SpaceGame Server
 
 ### Building:
-Change the include flag in [simd.h](utils/types/simd.h) from *ARM* to *INTEL* or *AMD*. *SSE4.2* and below SIMD extensions must be available to compile.
-
 There are many build targets available with make.
 
 - **make**: With no args, make creates a medium performance build without cleaning.

@@ -3,10 +3,15 @@
 
 #include <stdbool.h>
 
-#define ARM
+// #define ARM
 // #define INTEL
 // #define AMD
 
+#if defined(__x86_64__) || defined(_M_X64)
+#   define INTEL
+#else
+#   define ARM
+#endif
 
 #if defined(ARM)
 #   include <arm_neon.h>
