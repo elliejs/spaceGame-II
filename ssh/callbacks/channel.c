@@ -9,6 +9,9 @@
 #include "../../world/world_server.h"
 #include "../../render/render_daemon.h"
 
+#include "../../astrogammon/astrogammon_client.h"
+#include "../../astrogammon/gui.h"
+
 // ssh_channel_data_callback
 /**
  * @brief SSH channel data callback. Called when data is available on a channel
@@ -24,6 +27,9 @@
 int channel_data_callback(ssh_session session, ssh_channel channel, void *data, uint32_t len, int is_stderr, void *userdata) {
   ssh_client_t * ssh_client = (ssh_client_t *) userdata;
   unsigned char * char_data = (unsigned char *) data;
+
+  if (ssh_client->mode == ASTROGAMMON)
+    return handle_input(data, len, is_stderr, userdata);
 
   printf("[ssh_client %u]: %s\n", ssh_client->id, "channel_data_callback");
   printf("\t[ssh_client %u]: len: %d\n", ssh_client->id, len);
@@ -178,9 +184,12 @@ int channel_pty_request_callback(ssh_session session, ssh_channel channel, const
   printf("\t[ssh_client %u]: pxwidth: %d\n", ssh_client->id, pxwidth);
   printf("\t[ssh_client %u]: pxheight: %d\n", ssh_client->id, pxheight);
 
-  request_player(ssh_client->id);
-  render_daemon(width, height, 256, ssh_client->channel, ssh_client->id);
-
+  if (ssh_client->mode == SPACEGAME) {
+    request_player(ssh_client->id);
+    render_daemon(width, height, 256, ssh_client->channel, ssh_client->id);
+  } else {
+    start_astrogammon_gui(width, height, 256, ssh_client->channel, ssh_client->id);
+  }
   printf("\t[ssh_client %u]: pty request successful.\n", ssh_client->id);
   return 0;
 }

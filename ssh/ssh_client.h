@@ -7,6 +7,13 @@
 #include <libssh/callbacks.h>
 
 typedef
+enum game_mode_e {
+  ASTROGAMMON,
+  SPACEGAME
+}
+game_mode_t;
+
+typedef
 struct ssh_client_s {
   //static id info
   unsigned int id;
@@ -25,6 +32,8 @@ struct ssh_client_s {
   ssh_channel channel;
   struct ssh_channel_callbacks_struct ssh_client_channel_callbacks;
   ssh_event event;
+
+  game_mode_t mode;
 }
 ssh_client_t;
 

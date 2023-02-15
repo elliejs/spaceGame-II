@@ -85,12 +85,12 @@ chunk_t * gather_chunk(chunk_coord_t abs_coord) {
     item = (cache_item_t *) cache_node->data;
   } else {
     if (item->instantiated) {
-      delete(&(world_server->world_db.search_tree), (void *) item);
+      aa_delete(&(world_server->world_db.search_tree), (void *) item);
     } else {
       item->instantiated = true;
     }
     item->encoded_id = encoded_id;
-    insert(&(world_server->world_db.search_tree), (void *) item, &(item->search_node));
+    aa_insert(&(world_server->world_db.search_tree), (void *) item, &(item->search_node));
     RWLOCK_WLOCK(&(item->chunk.rwlock));
     generate_chunk(abs_coord, &(item->chunk));
     RWLOCK_WUNLOCK(&(item->chunk.rwlock));

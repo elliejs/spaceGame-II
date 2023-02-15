@@ -17,34 +17,6 @@ const unsigned char pixel_selector_byte[16] = {
 };
 
 
-#define ZERO_CHAR '0'
-#define A_CHAR 'A'
-
-#define ESC (unsigned char) 0x1B
-#define CSI ESC, '['
-#define OSC ESC, ']'
-#define DCS ESC, 'P'
-#define ST ESC, '\\'
-
-#define START_ALTERNATE_BUFFER CSI, '?', '1', '0', '4', '9', 'h'
-#define CLEAR_SCREEN CSI, '2', 'J'
-#define RESET_HOME ESC, 'Y', '0', '0'
-// #define SET_SCROLLING_REGION(TOP, BOTTOM) CSI, TOP, ';', BOTTOM, 'r'
-// #define RESET_CHARACTER_ATTRIBUTES CSI, '0', 'm'
-
-#define START_ALTERNATE_BUFFER_SIZE 8
-#define LOAD_COLOR_SIZE 22
-
-#define NBLESSINGS_HEADER_SIZE (START_ALTERNATE_BUFFER_SIZE + CLEAR_SCREEN_SIZE + LOAD_COLOR_SIZE * 256 + 1)
-
-#define INT2CHARS(I) ZERO_CHAR + (unsigned char) (I / 100), ZERO_CHAR + (unsigned char) ((I % 100) / 10), ZERO_CHAR + (unsigned char) (I % 10)
-#define HEX2CHAR(HEX) (HEX) > 9 ? (unsigned char) A_CHAR + (HEX) - 10 : (unsigned char) ZERO_CHAR + (HEX)
-#define HEX2CHARS(HEX) HEX2CHAR((HEX >> 4) & 0x0F), HEX2CHAR(HEX & 0x0F)
-
-#define LOAD_COLOR(I, R, G, B) OSC, '4', ';', INT2CHARS(I), ';', 'r', 'g', 'b', ':', HEX2CHARS((int) roundf(R)), '/', HEX2CHARS((int) roundf(G)), '/', HEX2CHARS((int) roundf(B)), ST
-#define APPLY_FORE(I) '3', '8', ';', '5', ';', INT2CHARS(I)
-#define APPLY_BACK(I) '4', '8', ';', '5', ';', INT2CHARS(I)
-
 static
 unsigned char nblessings_header[NBLESSINGS_HEADER_SIZE] = {
   START_ALTERNATE_BUFFER,
@@ -69,8 +41,8 @@ unsigned char * nblessings_footer_data(unsigned int * footer_len) {
 
 unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned int width, unsigned char * buffer) {
   unsigned int i = 0;
-  memcpy(buffer + i, (unsigned char[]) {CLEAR_SCREEN}, CLEAR_SCREEN_SIZE);
-  i += CLEAR_SCREEN_SIZE;
+  memcpy(buffer + i, (unsigned char[]) {CLEAR_SCREEN, RESET_HOME}, CLEAR_SCREEN_SIZE + RESET_HOME_SIZE);
+  i += CLEAR_SCREEN_SIZE + RESET_HOME_SIZE;
   unsigned int fore_color = pixels[0].fore;
   unsigned int back_color = pixels[0].back;
   memcpy(buffer + i, (unsigned char[]) {CSI, APPLY_FORE(fore_color), ';', APPLY_BACK(back_color), 'm'}, 20);

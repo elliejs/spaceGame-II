@@ -1,6 +1,8 @@
 #ifndef RENDER_DAEMON_H
 #define RENDER_DAEMON_H
 
+#include <libssh/server.h>
+
 #define NUM_THREADS 4
 #define FPS 10
 

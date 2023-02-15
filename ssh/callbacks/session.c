@@ -4,6 +4,9 @@
 #include "session.h"
 #include "../ssh_client.h"
 
+
+#include "../../astrogammon/astrogammon_client.h"
+#include "../../astrogammon/astrogammon_server.h"
 // ssh_auth_password_callback
 /**
  * @brief SSH authentication callback.
@@ -23,8 +26,22 @@ int auth_password_callback(ssh_session session, const char *user, const char *pa
           ssh_client->id, user,
           ssh_client->id, password);
 
+  if (!strcmp(user, "astrogammon")) {
+    ssh_client->authenticated = true;
+    ssh_client->mode = ASTROGAMMON;
+    if (strcmp(password, "")) {
+      printf("joining existing game\n");
+      join_game((char *) password);
+    } else {
+      printf("creating new astrogammon game\n");
+      join_game(create_game(create_ruleset_classic()));
+    }
+    printf("done\n");
+    return SSH_AUTH_SUCCESS;
+  }
   if(!strcmp(user, "jelly") && !strcmp(password, "toast")) {
     ssh_client->authenticated = true;
+    ssh_client->mode = SPACEGAME;
     return SSH_AUTH_SUCCESS;
   } else {
     ssh_client->auth_attempts++;

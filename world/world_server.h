@@ -2,6 +2,7 @@
 #define WORLD_SERVER_H
 
 #include "../math/vector_3d.h"
+#include "../math/fast_list.h"
 #include "../utils/semaphore.h"
 #include "chunk.h"
 
@@ -16,23 +17,6 @@
 #define CHUNK_SIZE (1 << CHUNK_POW)
 #define NOISE_DOMAIN_SIZE CHUNK_SIZE << 2
 extern SGVec3D_t chunk_offsets[CUBE_NUM];
-
-#define FAST_LIST_T(T, MAX)                   \
-  struct {                                    \
-    unsigned int num;                         \
-    T data[MAX];                              \
-  }
-
-#define PUSH_FAST_LIST(FL, X)                 \
-  FL.data[FL.num++] = X
-
-#define POP_FAST_LIST(FL, X)                  \
-  for(unsigned int i = 0; i < FL.num; i++) {  \
-    if(FL.data[i] == X) {                     \
-      FL.data[i] = FL.data[--FL.num];         \
-      break;                                  \
-    }                                         \
-  }
 
 #include "../objects/object.h"
 

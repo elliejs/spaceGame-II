@@ -30,7 +30,7 @@ aa_tree_t;
 
 
 bool find(aa_tree_t * tree, void * data, aa_node_t ** match);
-void insert(aa_tree_t * tree, void * data, aa_node_t * to);
-void delete(aa_tree_t * tree, void * data);
+void aa_insert(aa_tree_t * tree, void * data, aa_node_t * to);
+void aa_delete(aa_tree_t * tree, void * data);
 
 #endif /* end of include guard: AA_TREE_H */

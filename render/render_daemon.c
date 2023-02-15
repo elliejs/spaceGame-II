@@ -91,7 +91,7 @@ SGVec3D_t create_rays(orientation_t orientation, SGVec rots_sin_x, SGVec rots_co
 
 static
 void * pixel_task(void * nothing) {
-  int tid = (int)nothing;
+  // int tid = (int)nothing;
   // printf("%d disable cancel\n", tid);
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
   // printf("%d disable cancel success\n", tid);
@@ -342,7 +342,7 @@ void render_daemon(int width, int height, unsigned int max_colors, ssh_channel c
   SEM_SETVAL(render_client.job_sem, 0, 0);
   SEM_SETVAL(render_client.job_sem, 1, 0);
   for (int i = 0; i < NUM_THREADS; i++)
-    pthread_create(render_client.pixel_worker_pids + i, NULL, pixel_task, (void*)i);
+    pthread_create(render_client.pixel_worker_pids + i, NULL, pixel_task, NULL);
 
   pthread_create(&(render_client.pid), NULL, render_task, NULL);
 
