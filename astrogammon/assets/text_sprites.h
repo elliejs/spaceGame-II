@@ -3,37 +3,127 @@
 
 #include "asset.h"
 
-extern const
-asset_t zero;
+#include "text_sprites.h"
 
-extern const
-asset_t one;
+#define zero (asset_t) { \
+  .width = 3, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╭─╮" \
+  "│ │" \
+  "╰─╯" \
+};
 
-extern const
-asset_t two;
+#define one (asset_t) { \
+  .width = 1, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╮" \
+  "│" \
+  "╰" \
+};
 
-extern const
-asset_t three;
+#define two (asset_t) { \
+  .width = 3, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╭─╮" \
+  "╭─╯" \
+  "╰─╯" \
+};
 
-extern const
-asset_t four;
+#define three (asset_t) { \
+  .width = 3, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╭─╮" \
+  " ─┤" \
+  "╰─╯" \
+};
 
-extern const
-asset_t five;
+#define four (asset_t) { \
+  .width = 3, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╭ ╭" \
+  "╰─┤" \
+  "  ╯" \
+};
 
-extern const
-asset_t six;
+#define five (asset_t) { \
+  .width = 3, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╭─╮" \
+  "╰─╮" \
+  "╰─╯" \
+};
 
-extern const
-asset_t seven;
+#define six (asset_t) { \
+  .width = 3, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╭─╮" \
+  "├─╮" \
+  "╰─╯" \
+};
 
-extern const
-asset_t eight;
+#define seven (asset_t) { \
+  .width = 3, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╭─╮" \
+  "  │" \
+  "  ╰" \
+};
 
-extern const
-asset_t nine;
+#define eight (asset_t) { \
+  .width = 3, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╭─╮" \
+  "├─┤" \
+  "╰─╯" \
+};
 
-extern const
-asset_t ten;
+#define nine (asset_t) { \
+  .width = 3, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╭─╮" \
+  "╰─┤" \
+  "╰─╯" \
+};
+
+#define ten (asset_t) { \
+  .width = 4, \
+  .height = 3, \
+  .offset_x = 0, \
+  .offset_y = 0, \
+  .data = \
+  "╮╭─╮" \
+  "││ │" \
+  "╰╰─╯" \
+};
 
 #endif /* end of include guard: TEXT_SPRITES_H */

@@ -176,9 +176,9 @@
 #   define SGVec_Gtr_Than(X, Y)                 SGVecUInt_Cast_SGVec(_mm_cmpgt_ps((X), (Y)))
 #   define SGVec_Gtr_Or_Eq_Than(X, Y)           SGVecUInt_Cast_SGVec(_mm_cmpge_ps((X), (Y)))
 
-#   define SGVec_Ternary(X, Y, Z)               _mm_blendv_ps((Y), (Z), SGVec_Cast_SGVecUInt((X)))
+#   define SGVec_Ternary(X, Y, Z)               _mm_blendv_ps((Z), (Y), SGVec_Cast_SGVecUInt((X)))
   //int
-#   define SGVecUInt_Ternary(X, Y, Z)           _mm_blendv_epi8((Y), (Z), (X))
+#   define SGVecUInt_Ternary(X, Y, Z)           _mm_blendv_epi8((Z), (Y), (X))
 #endif
 
 
