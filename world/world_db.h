@@ -1,13 +1,30 @@
-#ifndef WORLD_SERVER_H
-#include "world_server.h"
-#endif
-
 #ifndef WORLD_DB_H
 #define WORLD_DB_H
 
+#include <pthread.h>
+
+#include "../objects/object.h"
+
 #include "../math/aa_tree.h"
 
+#define MAX_OBJECTS 100
+#define MAX_LIGHTS  5
 #define CACHE_LEN (MAX_CLIENTS * CUBE_NUM)
+#define CUBE_NUM 27
+#define MAX_CLIENTS 256
+
+
+typedef
+struct chunk_s {
+  pthread_rwlock_t rwlock;
+
+  unsigned int num_objects;
+  object_t * objects;
+
+  unsigned int num_lights;
+  object_t ** lights;
+}
+chunk_t;
 
 typedef
 struct cache_item_s {
@@ -40,7 +57,6 @@ struct world_db_s {
 }
 world_db_t;
 
-#include "world_server.h"
 
 void gather_chunks(chunk_t ** chunk_storage, chunk_coord_t abs_coord);
 void start_world_db(world_db_t * world_db);

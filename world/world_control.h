@@ -3,8 +3,10 @@
 
 typedef
 enum vision_mode_e {
-  STANDARD = 0,
-  RADAR = 1,
+  STANDARD,
+  RADAR,
+  HUD,
+  MAPPING,
 }
 vision_mode_t;
 

@@ -3,13 +3,13 @@
 extern inline
 int SEM_INIT(int N);
 extern inline
-int SEM_POSTVAL(int S, int N, short V);
+int SEM_POSTVAL(int S, unsigned short N, short V);
 extern inline
-int SEM_WAITVAL(int S, int N, short V);
+int SEM_WAITVAL(int S, unsigned short N, short V);
 extern inline
-int SEM_POST(int S, int N);
+int SEM_POST(int S, unsigned short N);
 extern inline
-int SEM_WAIT(int S, int N);
+int SEM_WAIT(int S, unsigned short N);
 extern inline
 int SEM_GETVAL(int S, int N);
 extern inline

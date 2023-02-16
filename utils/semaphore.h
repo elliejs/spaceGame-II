@@ -28,7 +28,7 @@ int SEM_INIT(int N) {
 }
 
 inline
-int SEM_POSTVAL(int S, int N, short V) {
+int SEM_POSTVAL(int S, unsigned short N, short V) {
   struct sembuf postval = {.sem_num = N, .sem_op = (short) V, .sem_flg = 0};
   int R = semop(S, &postval, 1);
   #if defined(SG_DEBUG)
@@ -38,7 +38,7 @@ int SEM_POSTVAL(int S, int N, short V) {
 }
 
 inline
-int SEM_WAITVAL(int S, int N, short V) {
+int SEM_WAITVAL(int S, unsigned short N, short V) {
   struct sembuf waitval = {.sem_num = N, .sem_op = (short) -V, .sem_flg = 0};
   int R = semop(S, &waitval, 1);
   #if defined(SG_DEBUG)
@@ -48,7 +48,7 @@ int SEM_WAITVAL(int S, int N, short V) {
 }
 
 inline
-int SEM_POST(int S, int N) {
+int SEM_POST(int S, unsigned short N) {
   struct sembuf postval = {.sem_num = N, .sem_op = (short) 1, .sem_flg = 0};
   int R = semop(S, &postval, 1);
   #if defined(SG_DEBUG)
@@ -58,7 +58,7 @@ int SEM_POST(int S, int N) {
 }
 
 inline
-int SEM_WAIT(int S, int N) {
+int SEM_WAIT(int S, unsigned short N) {
   struct sembuf waitval = {.sem_num = N, .sem_op = (short) -1, .sem_flg = 0};
   int R = semop(S, &waitval, 1);
   #if defined(SG_DEBUG)
@@ -99,10 +99,6 @@ inline
 int MTX_INIT(pthread_mutex_t * X) {
   pthread_mutexattr_t attr;
   pthread_mutexattr_init(&attr);
-// #if defined(__APPLE__)
-//   pthread_mutexattr_setpolicy_np(&attr, PTHREAD_MUTEX_POLICY_FAIRSHARE_NP);
-// #endif
-  // pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
   pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
 
   int R = pthread_mutex_init(X, &attr);

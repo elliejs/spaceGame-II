@@ -1,4 +1,5 @@
 #include "star.h"
+#include "../../world/world_server.h"
 
 static
 SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx) {

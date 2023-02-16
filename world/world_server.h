@@ -5,13 +5,7 @@
 #include "../math/fast_list.h"
 #include "../utils/semaphore.h"
 #include "chunk.h"
-
-#define MAX_CLIENTS 256
-
-#define CUBE_NUM 27
-
-#define MAX_OBJECTS 100
-#define MAX_LIGHTS  5
+#include "world_db.h"
 
 #define CHUNK_POW 10
 #define CHUNK_SIZE (1 << CHUNK_POW)
@@ -20,17 +14,6 @@ extern SGVec3D_t chunk_offsets[CUBE_NUM];
 
 #include "../objects/object.h"
 
-typedef
-struct chunk_s {
-  pthread_rwlock_t rwlock;
-
-  unsigned int num_objects;
-  object_t * objects;
-
-  unsigned int num_lights;
-  object_t ** lights;
-}
-chunk_t;
 
 typedef
 struct world_snapshot_s {
@@ -41,7 +24,6 @@ struct world_snapshot_s {
 }
 world_snapshot_t;
 
-#include "world_db.h"
 
 typedef
 struct world_server_s {

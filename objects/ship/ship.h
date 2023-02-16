@@ -4,6 +4,7 @@
 #include "../../math/vector_3d.h"
 #include "../../world/chunk.h"
 
+
 typedef
 struct orientation_s {
   SGVec3D_t forward;

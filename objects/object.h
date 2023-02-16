@@ -1,5 +1,3 @@
-#include "../world/world_server.h"
-
 #ifndef OBJECT_H
 #define OBJECT_H
 

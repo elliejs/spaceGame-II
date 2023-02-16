@@ -75,9 +75,9 @@ rgb_t normalize_rgb(rgb_t rgb) {
 inline
 rgb_t clamp_denormalize_rgb(rgb_t rgb) {
   return (rgb_t) {
-    .r = fmin(fmax(rgb.r * (float) 255., 0.), 255.),
-    .g = fmin(fmax(rgb.g * (float) 255., 0.), 255.),
-    .b = fmin(fmax(rgb.b * (float) 255., 0.), 255.),
+    .r = fminf(fmaxf(rgb.r * (float) 255., 0.), 255.),
+    .g = fminf(fmaxf(rgb.g * (float) 255., 0.), 255.),
+    .b = fminf(fmaxf(rgb.b * (float) 255., 0.), 255.),
   };
 }
 
@@ -98,9 +98,9 @@ rgb_t scale_denormalize_rgb(rgb_t rgb) {
   }
 
   return (rgb_t) {
-    .r = fmin(fmax(rgb.r * (float) 255., 0.), 255.),
-    .g = fmin(fmax(rgb.g * (float) 255., 0.), 255.),
-    .b = fmin(fmax(rgb.b * (float) 255., 0.), 255.),
+    .r = fminf(fmaxf(rgb.r * (float) 255., 0.), 255.),
+    .g = fminf(fmaxf(rgb.g * (float) 255., 0.), 255.),
+    .b = fminf(fmaxf(rgb.b * (float) 255., 0.), 255.),
   };
 }
 
