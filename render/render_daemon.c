@@ -251,7 +251,7 @@ const float FOV_RAD = DEG2RAD(FOV);
 
 void render_daemon_request_dimensions(int width, int height) {
   MTX_LOCK(&(render_client.dim_mtx));
-  printf("nuts\n");
+  printf("request_dims\n");
   render_client.width = width;
   render_client.height = height;
   const int largest_dim = width > (2 * height) ? width : (2 * height);
@@ -274,10 +274,7 @@ static inline
 void blit() {
   SEM_WAITVAL(render_client.job_sem, 1, NUM_THREADS);
   destroy_snapshot(&(render_client.snapshot));
-  // for (int i = 0; i < render_client.width * render_client.height; i++) {
-  //   if (render_client.framebuffer[i].fore >= render_client.num_colors || render_client.framebuffer[i].back >= render_client.num_colors) {
-  //   }
-  // }
+
   unsigned int len = rasterize_frame(render_client.framebuffer, render_client.width * render_client.height, render_client.width, render_client.stream_buffer);
   unsigned int written = 0;
   printf("would like to write %u\n", len);
@@ -301,7 +298,7 @@ void * render_task(void * nothing) {
     enqueue_render();
     printf("[render_client %u]: queued\n", id);
     nanosleep(&fps_ts, NULL);
-    printf("[render_client %u]: shlept\n", id);
+    printf("[render_client %u]: slept\n", id);
     blit();
     MTX_UNLOCK(&(render_client.dim_mtx));
     printf("[render_client %u]: blitted\n", id);
