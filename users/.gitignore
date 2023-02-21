@@ -1,0 +1,6 @@
+# Keep everything in this directory
+!*
+
+# Except this file
+users.database
+
