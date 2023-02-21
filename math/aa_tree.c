@@ -50,17 +50,17 @@ aa_node_t * decrease_level(aa_node_t * node) {
 }
 
 static
-bool find_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * nil, aa_node_t * node, void * data, aa_node_t ** match) {
+bool aa_find_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * nil, aa_node_t * node, void * data, aa_node_t ** match) {
   if (node == nil) return false;
   switch (comparator(data, node->data)) {
     case LT:
       ;
-      return find_helper(comparator, nil, node->left, data, match);
+      return aa_find_helper(comparator, nil, node->left, data, match);
       break;
 
     case GT:
       ;
-      return find_helper(comparator, nil, node->right, data, match);
+      return aa_find_helper(comparator, nil, node->right, data, match);
       break;
 
     default:
@@ -70,8 +70,8 @@ bool find_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * nil,
   }
 }
 
-bool find(aa_tree_t * tree, void * data, aa_node_t ** match) {
-  return find_helper(tree->comparator, &(tree->nil), tree->root, data, match);
+bool aa_find(aa_tree_t * tree, void * data, aa_node_t ** match) {
+  return aa_find_helper(tree->comparator, &(tree->nil), tree->root, data, match);
 }
 
 static

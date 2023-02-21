@@ -3,21 +3,12 @@
 
 #include "../math/aa_tree.h"
 #include "../math/vector_3d.h"
+#include "../world/world_db.h"
 
-typedef
-struct user_data_s {
-  char * password;
-  SGVec3D_t spawn_loc;
-}
-user_data_t;
+#define MIN_DB_SIZE MAX_CLIENTS
+#define MAX_USERNAME_LEN 32
 
-typedef
-struct user_s {
-  char * username;
-  user_data_t * data;
-}
-user_t;
-
-user_t * get_user(char * name);
+off_t login(char * username, char * password);
+void start_user_db(void);
 
 #endif /* end of include guard: USER_DB_H */

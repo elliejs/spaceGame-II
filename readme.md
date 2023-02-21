@@ -40,7 +40,7 @@ There are many build targets available with make.
 
 ### Supported Platforms
 
-- ARMv8 with NEON SIMD
+- ARMv8 with NEON
 - x86_64 with SSE4.2
 
 ---
@@ -53,12 +53,16 @@ There are many build targets available with make.
 - [X] ~~Makefile for ease of building and configuration~~
   - **[FIX]** [Makefile](Makefile)
 - [X] ~~x86_64 Support~~
-  - While this is still in progress, spaceGame can now compile and vaguely run on x86_64 which is a huge success. More development is required, and will be the upcoming focus.
-- [ ] ~~Move from SIMD to Vulkan, to make more platforms available~~
-  - **[WONT DO]** Since Vulkan requires so much boilerplate and GPU ray-marching isn't optimizable anyway, this has been forgone in favor of just buying more threads and cpus.
+  - ~~While this is still in progress, spaceGame can now compile and vaguely run on x86_64 which is a huge success. More development is required, and will be the upcoming focus.~~
+  - ~~SIMD is fully ported to SSE4.2, meaning any INTEL cpu newer than Nov 2008 should be supported.~~
+- [WONT DO] ~~Move from SIMD to Vulkan, to make more platforms available~~
+  - Since Vulkan requires so much boilerplate and GPU ray-marching isn't *really that* optimizable anyway, this has been forgone in favor of just buying more threads and cpus.
 - [ ] Persistent user profiles.
   - [ ] user keymaps for Colemak, Dvorak, etc
   - [ ] save-states for location, health, inventory, etc
 - [ ] Friend sharing and waypointing
+- [ ] better planet gen
+ - More planets, revolution, rotation, and orbital stellar systems
+ -
 - [ ] Speed Optimizations
   - [ ] hoist as many constants to compile time as possible

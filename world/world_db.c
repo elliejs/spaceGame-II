@@ -81,7 +81,7 @@ chunk_t * gather_chunk(chunk_coord_t abs_coord) {
   chunk_t * ret_chunk;
   MTX_LOCK(&(world_server->world_db.db_mtx));
   cache_item_t * item = world_server->world_db.tail;
-  if (find(&(world_server->world_db.search_tree), (void *) &dummy, &cache_node)) {
+  if (aa_find(&(world_server->world_db.search_tree), (void *) &dummy, &cache_node)) {
     item = (cache_item_t *) cache_node->data;
   } else {
     if (item->instantiated) {

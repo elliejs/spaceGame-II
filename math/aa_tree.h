@@ -29,7 +29,7 @@ struct aa_tree_s {
 aa_tree_t;
 
 
-bool find(aa_tree_t * tree, void * data, aa_node_t ** match);
+bool aa_find(aa_tree_t * tree, void * data, aa_node_t ** match);
 void aa_insert(aa_tree_t * tree, void * data, aa_node_t * to);
 void aa_delete(aa_tree_t * tree, void * data);
 
