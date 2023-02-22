@@ -6,7 +6,7 @@
 #include "../world/world_db.h"
 
 #define MIN_DB_SIZE MAX_CLIENTS
-#define MAX_USERNAME_LEN 32
+#define MAX_USERPASS_LEN 32
 
 off_t login(char * username, char * password);
 void start_user_db(void);
