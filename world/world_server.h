@@ -46,7 +46,8 @@ void end_world_server();
 void request_snapshot(world_snapshot_t *, unsigned int id);
 void destroy_snapshot(world_snapshot_t *);
 
-void request_player(unsigned int id);
+void request_player(unsigned int id, off_t user_offset);
+void request_player_save(unsigned int id, off_t user_index);
 void request_player_end(unsigned int id);
 
 extern world_server_t * world_server;

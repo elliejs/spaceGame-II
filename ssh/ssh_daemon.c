@@ -13,6 +13,7 @@
 #include "ssh_daemon.h"
 #include "../render/render_daemon.h"
 #include "../world/world_server.h"
+#include "../users/user_db.h"
 
 static
 ssh_client_t * get_available_ssh_client_slot(ssh_server_t * ssh_server) {
@@ -43,6 +44,10 @@ void reset_ssh_client(ssh_client_t * ssh_client) {
 
   printf("[ssh_client %u]: reset: renderer\n", ssh_client->id);
   end_render_daemon();
+
+  printf("[ssh_client %u]: reset: save player in user database\n", ssh_client->id);
+  request_player_save(ssh_client->id, ssh_client->user_index);
+  ssh_client->user_index = -1;
 
   printf("[ssh_client %u]: reset: remove player from world_server\n", ssh_client->id);
   request_player_end(ssh_client->id);

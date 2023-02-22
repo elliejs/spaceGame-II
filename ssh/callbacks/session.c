@@ -7,6 +7,8 @@
 
 #include "../../astrogammon/astrogammon_client.h"
 #include "../../astrogammon/astrogammon_server.h"
+#include "../../users/user_db.h"
+
 // ssh_auth_password_callback
 /**
  * @brief SSH authentication callback.
@@ -39,8 +41,11 @@ int auth_password_callback(ssh_session session, const char *user, const char *pa
     printf("done\n");
     return SSH_AUTH_SUCCESS;
   }
-  if(!strcmp(user, "jelly") && !strcmp(password, "toast")) {
+
+  off_t user_index = login(user, password);
+  if(user_index >= 0) {
     ssh_client->authenticated = true;
+    ssh_client->user_index = user_index;
     ssh_client->mode = SPACEGAME;
     return SSH_AUTH_SUCCESS;
   } else {

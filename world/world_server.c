@@ -3,6 +3,7 @@
 #include <sys/mman.h>
 
 #include "world_server.h"
+#include "../users/user_db.h"
 
 world_server_t * world_server = NULL;
 SGVec3D_t cube_offsets[CUBE_NUM * 2];
@@ -37,17 +38,11 @@ void start_world_server() {
   world_server->active_ids.num = 0;
 }
 
-void request_player(unsigned int id) {
+void request_player(unsigned int id, off_t user_offset) {
   printf("requesting player\n");
   MTX_LOCK(world_server->player_mtxs + id);
-  world_server->players[id] = create_ship(
-    (SGVec3D_t) {
-      .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
-      .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
-      .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
-    },
-    (chunk_coord_t) {0,0,0} //will be loaded from logout save once the user DB is alive
-  );
+
+  get_user_data(user_offset, world_server->players + id);
   MTX_UNLOCK(world_server->player_mtxs + id);
 
   MTX_LOCK(&(world_server->active_ids_mtx));
@@ -55,6 +50,12 @@ void request_player(unsigned int id) {
   MTX_UNLOCK(&(world_server->active_ids_mtx));
 
   printf("player created\n");
+}
+
+void request_player_save(unsigned int id, off_t user_index) {
+  MTX_LOCK(world_server->player_mtxs + id);
+  update_user_data(user_index, world_server->players + id);
+  MTX_UNLOCK(world_server->player_mtxs + id);
 }
 
 void request_player_end(unsigned int id) {

@@ -88,7 +88,7 @@ void end_user_db(void) {
   close(user_db->user_data_fd);
 }
 
-off_t get_user(char * name) {
+off_t get_user(char const * name) {
   aa_node_t * result = NULL;
   user_t user;
   memcpy(user.username, name, MAX_USERPASS_LEN);
@@ -102,7 +102,23 @@ off_t get_user(char * name) {
   }
 }
 
-off_t create_user(char * username, char * password) {
+void update_user_data(off_t user_offset, object_t * object) {
+  const long PAGESIZE = sysconf(_SC_PAGESIZE);
+  RWLOCK_WLOCK(&(user_db->rwlock_data));
+    memcpy(&(user_db->user_data[user_offset].self), object, sizeof(object_t));
+    uintptr_t page_aligned_addr = (uintptr_t) user_db->user_data + user_offset / PAGESIZE;
+    uintptr_t page_aligned_offset = (uintptr_t) user_db->user_data + user_offset % PAGESIZE;
+    msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_data_t), MS_ASYNC);
+  RWLOCK_WUNLOCK(&(user_db->rwlock_data));
+}
+
+void get_user_data(off_t user_offset, object_t * object) {
+  RWLOCK_RLOCK(&(user_db->rwlock_data));
+    memcpy(object, &(user_db->user_data[user_offset].self), sizeof(object_t));
+  RWLOCK_RUNLOCK(&(user_db->rwlock_data));
+}
+
+off_t create_user(char const * username, char const * password) {
   if (user_db->num_users >= user_db->max_users) {
     user_db->max_users *= 2;
     RWLOCK_WLOCK(&(user_db->rwlock_data));
@@ -137,24 +153,24 @@ off_t create_user(char * username, char * password) {
     msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_db->user_index->num_users), MS_ASYNC);
   RWLOCK_WUNLOCK(&(user_db->rwlock_index));
 
-  RWLOCK_WLOCK(&(user_db->rwlock_data));
-    user_db->user_data[user_offset].self = create_ship((SGVec3D_t) {
+
+  RWLOCK_WLOCK(&(user_db->rwlock_index));
+    memcpy(user_db->user_data[user_offset].password, password, MAX_USERPASS_LEN);
+  RWLOCK_WUNLOCK(&(user_db->rwlock_index));
+
+  object_t self = create_ship((SGVec3D_t) {
       .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
       .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
       .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
     },
     (chunk_coord_t) {0,0,0});
-    memcpy(user_db->user_data[user_offset].password, password, MAX_USERPASS_LEN);
+  update_user_data(user_offset, &self);
 
-    page_aligned_addr = (uintptr_t) user_db->user_data + user_offset / PAGESIZE;
-    page_aligned_offset = (uintptr_t) user_db->user_data + user_offset % PAGESIZE;
-    msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_data_t), MS_ASYNC);
-  RWLOCK_WUNLOCK(&(user_db->rwlock_data));
   return user_offset;
 }
 
 
-off_t login(char * username, char * password) {
+off_t login(char const * username, char const * password) {
   off_t user_offset = get_user(username);
   if (user_offset == -1) {
     return create_user(username, password);

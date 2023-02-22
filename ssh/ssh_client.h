@@ -17,6 +17,7 @@ typedef
 struct ssh_client_s {
   //static id info
   unsigned int id;
+  off_t user_index;
   pid_t pid;
   atomic_bool * active;
   bool pleaseKill;

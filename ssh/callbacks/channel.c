@@ -185,7 +185,7 @@ int channel_pty_request_callback(ssh_session session, ssh_channel channel, const
   printf("\t[ssh_client %u]: pxheight: %d\n", ssh_client->id, pxheight);
 
   if (ssh_client->mode == SPACEGAME) {
-    request_player(ssh_client->id);
+    request_player(ssh_client->id, ssh_client->user_index);
     render_daemon(width, height, 256, ssh_client->channel, ssh_client->id);
   } else {
     start_astrogammon_gui(width, height, 256, ssh_client->channel, ssh_client->id);
