@@ -31,7 +31,7 @@ struct cache_item_s {
   //db_mtx protected
   struct cache_item_s * prev;
   struct cache_item_s * next;
-  aa_node_t search_node;
+  off_t search_node;
   unsigned int encoded_id;
   bool instantiated;
 
@@ -50,10 +50,12 @@ struct world_db_s {
   //db_mtx protected
   cache_item_t * head;
   cache_item_t * tail;
-  aa_tree_t search_tree;
+//   aa_tree_t search_tree;
 
   //db_cache_rwlock protected
   cache_item_t backing_data[CACHE_LEN];
+  aa_node_t search_nodes[CACHE_LEN + 1];
+  off_t search_root;
 }
 world_db_t;
 
