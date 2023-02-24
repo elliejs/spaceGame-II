@@ -22,12 +22,11 @@ unsigned int aa_error_check_helper(aa_node_t * root, off_t abs_off, off_t max_of
 }
 
 void aa_error_check(aa_node_t * root, off_t abs_off, off_t max_off) {
-  printf("abs_off %ld, max_off %ld\n", abs_off, max_off);
+//   printf("abs_off %ld, max_off %ld\n", abs_off, max_off);
   aa_error_check_helper(root, abs_off, max_off, 0, 0);
 }
 
 off_t skew(aa_node_t * tree) {
-  printf("tree level %u, tree left level %u\n", tree->level, (tree + tree->left)->level);
   if (tree->level == (tree + tree->left)->level) {
     off_t left = tree->left;
     tree->left = (tree + left)->right + left;
@@ -60,7 +59,7 @@ aa_node_t * predecessor(aa_node_t * node) {
   return node;
 }
 
-aa_node_t * decrease_level(aa_node_t * node) {
+void decrease_level(aa_node_t * node) {
    unsigned int correct_level = 1 +
    ((node + node->left)->level < (node + node->right)->level
    ?(node + node->left)->level
@@ -72,7 +71,7 @@ aa_node_t * decrease_level(aa_node_t * node) {
      if (correct_level < (node + node->right)->level)
       (node + node->right)->level = correct_level;
    }
-   return node;
+   return;
 }
 
 static
@@ -102,9 +101,9 @@ bool aa_find(compare_t (* comparator) (void * a, void * b), aa_node_t * root, vo
 
 static
 off_t aa_insert_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * node, void * data, aa_node_t * to, off_t to_off) {
-  printf("to_off %ld\n", to_off);
+//   printf("to_off %ld\n", to_off);
   if ((node)->left == 0 && (node)->right == 0) {
-    printf("node is NIL\n");
+//     printf("node is NIL\n");
     *to = (aa_node_t) {
       .left = -to_off,
       .right = -to_off,
@@ -113,25 +112,25 @@ off_t aa_insert_helper(compare_t (* comparator) (void * a, void * b), aa_node_t 
     };
     node = to;
     off_t skew_off = skew(node);
-    printf("skew_off %ld\n", skew_off);
+//     printf("skew_off %ld\n", skew_off);
     off_t split_off = split(node + skew_off);
-    printf("split_off %ld\n", split_off);
-    return to_off + split_off;
+//     printf("split_off %ld\n", split_off);
+    return to_off + skew_off + split_off;
   }
 
   switch (comparator(data, node->data)) {
     case LT:
       ;
-      printf("LT %ld\n", node->left);
+//       printf("LT %ld\n", node->left);
       node->left += aa_insert_helper(comparator, (node + node->left), data, to, to_off);
-      printf("LEFT THEN: %ld\n", node->left);
+//       printf("LEFT THEN: %ld\n", node->left);
       break;
 
     case GT:
       ;
-      printf("GT %ld\n", node->right);
+//       printf("GT %ld\n", node->right);
       node->right += aa_insert_helper(comparator, (node + node->right), data, to, to_off);
-      printf("RIGHT THEN: %ld\n", node->right);
+//       printf("RIGHT THEN: %ld\n", node->right);
       break;
 
     default:
@@ -141,31 +140,31 @@ off_t aa_insert_helper(compare_t (* comparator) (void * a, void * b), aa_node_t 
   }
 
   off_t skew_off = skew(node);
-  printf("skew_off %ld\n", skew_off);
+//   printf("skew_off %ld\n", skew_off);
   off_t split_off = split(node + skew_off);
-  printf("split_off %ld\n", split_off);
-  return split_off;
+//   printf("split_off %ld\n", split_off);
+  return skew_off + split_off;
 //   return abs_off + split(node + skew(node));
 }
 
 void aa_insert(compare_t (* comparator) (void * a, void * b), off_t * root, aa_node_t * tree, void * data, off_t to_off) {
-  printf("starting root %ld\n", *root);
+//   printf("starting root %ld\n", *root);
   *root += aa_insert_helper(comparator, (tree + *root), data, tree + to_off, to_off);
-  printf("ending root %ld\n", *root);
+//   printf("ending root %ld\n", *root);
 }
 
 static
-off_t aa_delete_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * node, void * data, off_t nil_off) {
-  if ((node)->left == 0 && (node)->right == 0) return 0;
+off_t aa_delete_helper(compare_t (* comparator) (void * a, void * b), aa_node_t * node, void * data, off_t abs_off) {
+  if (node->left == 0 && node->right == 0) return 0;
   switch (comparator(data, node->data)) {
     case LT:
       ;
-      node->left += aa_delete_helper(comparator, (node + node->left), data, nil_off - node->left);
+      node->left += aa_delete_helper(comparator, (node + node->left), data, abs_off - node->left);
       break;
 
     case GT:
       ;
-      node->right += aa_delete_helper(comparator, (node + node->right), data, nil_off - node->right);
+      node->right += aa_delete_helper(comparator, (node + node->right), data, abs_off - node->right);
       break;
 
     default:
@@ -173,21 +172,21 @@ off_t aa_delete_helper(compare_t (* comparator) (void * a, void * b), aa_node_t 
       if ((node + node->left)->left == 0 && (node + node->left)->right == 0 && (node + node->right)->left == 0 && (node + node->right)->right == 0) {
         printf("free(node)\n");
 //         free(node);
-        return nil_off;
+        return -abs_off;
       }
       else if ((node + node->left)->left == 0 && (node + node->left)->right == 0) {
         aa_node_t * succ = successor(node);
         node->data = succ->data;
-        node->right += aa_delete_helper(comparator, (node + node->right), succ->data, nil_off - node->right);
+        node->right += aa_delete_helper(comparator, (node + node->right), succ->data, abs_off - node->right);
       } else {
         aa_node_t * pred = predecessor(node);
         node->data = pred->data;
-        node->left += aa_delete_helper(comparator, node + node->left, pred->data, nil_off - node->left);
+        node->left += aa_delete_helper(comparator, node + node->left, pred->data, abs_off - node->left);
       }
       break;
   }
 
-  node = decrease_level(node);
+  decrease_level(node);
   off_t skew_off = skew(node);
   node += skew_off;
   node->right += skew(node + node->right);
@@ -199,5 +198,5 @@ off_t aa_delete_helper(compare_t (* comparator) (void * a, void * b), aa_node_t 
 }
 
 void aa_delete(compare_t (* comparator) (void * a, void * b), off_t * root, aa_node_t * tree, void * data) {
-  *root = aa_delete_helper(comparator, tree + *root, data, -*root);
+  *root += aa_delete_helper(comparator, tree + *root, data, *root);
 }
