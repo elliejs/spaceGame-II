@@ -83,15 +83,15 @@ chunk_t * gather_chunk(chunk_coord_t abs_coord) {
   MTX_LOCK(&(world_server->world_db.db_mtx));
   cache_item_t * item = world_server->world_db.tail;
 //   printf("gather_chunk %u %u %u AA_FIND START\n", abs_coord.x, abs_coord.y, abs_coord.z);
-  if (aa_find(cache_comparator, world_server->world_db.search_nodes + world_server->world_db.search_root, (void *) &dummy, &cache_node)) {
+  if (aa_find(cache_comparator, world_server->world_db.search_nodes, world_server->world_db.search_root, (void *) &dummy, &cache_node, sizeof(aa_node_t))) {
 //     printf("gather_chunk %u %u %u AA_FIND TRUE\n", abs_coord.x, abs_coord.y, abs_coord.z);
     item = (cache_item_t *) cache_node->data;
   } else {
     printf("gather_chunk %u %u %u AA_FIND FALSE\n", abs_coord.x, abs_coord.y, abs_coord.z);
     if (item->instantiated) {
       printf("gather_chunk %u %u %u AA_DELETE START\n", abs_coord.x, abs_coord.y, abs_coord.z);
-      aa_error_check(world_server->world_db.search_nodes, world_server->world_db.search_root, CACHE_LEN);
-      aa_delete(cache_comparator, &(world_server->world_db.search_root), world_server->world_db.search_nodes, (void *) item);
+      aa_error_check(world_server->world_db.search_nodes, world_server->world_db.search_root, CACHE_LEN, sizeof(aa_node_t));
+      aa_delete(cache_comparator, world_server->world_db.search_nodes, &(world_server->world_db.search_root), (void *) item, sizeof(aa_node_t));
       printf("gather_chunk %u %u %u AA_DELETE DONE\n", abs_coord.x, abs_coord.y, abs_coord.z);
     } else {
       static int numitemsused = 0;
@@ -101,7 +101,7 @@ chunk_t * gather_chunk(chunk_coord_t abs_coord) {
     }
     item->encoded_id = encoded_id;
 //     printf("gather_chunk %u %u %u AA_INSERT START\n", abs_coord.x, abs_coord.y, abs_coord.z);
-    aa_insert(cache_comparator, &(world_server->world_db.search_root), world_server->world_db.search_nodes, (void *) item, item->search_node);
+    aa_insert(cache_comparator, world_server->world_db.search_nodes, &(world_server->world_db.search_root), (void *) item, item->search_node, sizeof(aa_node_t));
 //     printf("gather_chunk %u %u %u AA_INSERT DONE\n", abs_coord.x, abs_coord.y, abs_coord.z);
     RWLOCK_WLOCK(&(item->chunk.rwlock));
 //         printf("gather_chunk %u %u %u WLOCK\n", abs_coord.x, abs_coord.y, abs_coord.z);
@@ -200,16 +200,6 @@ void start_world_db(world_db_t * world_db) {
     .level = 0
   };
   world_db->search_root = 0;
-//   world_db->search_tree = (aa_tree_t) {
-//     .comparator = cache_comparator,
-//     .nil = (aa_node_t) {
-//       .left = &(world_db->search_tree.nil),
-//       .right = &(world_db->search_tree.nil),
-//       .data = NULL,
-//       .level = 0
-//     },
-//     .root = &(world_db->search_tree.nil)
-//   };
 }
 
 void end_world_db(world_db_t * world_db) {

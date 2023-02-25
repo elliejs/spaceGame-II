@@ -29,7 +29,7 @@ user_t;
 typedef
 struct user_index_s {
   unsigned int num_users;
-//   aa_tree_t data;
+  off_t search_root;
   user_t backing_nodes[];
 }
 user_index_t;
@@ -60,7 +60,6 @@ compare_t user_comparator(void * a, void * b) {
 }
 
 void start_user_db(void) {
-  return;
   if (user_db != NULL) {
     printf("[user_db]: Already instantiated, not double-mallocing\n");
     return;
@@ -98,27 +97,27 @@ void start_user_db(void) {
   printf("max users %d\n", user_db->max_users);
   user_db->user_index = mmap(NULL, user_db->max_users * sizeof(user_t) + sizeof(user_index_t), PROT_READ | PROT_WRITE, MAP_SHARED, user_db->user_index_fd, 0);
   user_db->user_data = mmap(NULL, user_db->max_users * sizeof(user_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, user_db->user_data_fd, 0);
-/*
+
   if (!index_exists && !data_exists) {
     printf("making new user_index aa_tree\n");
     user_db->user_index->num_users = 0;
-    user_db->user_index->data = (aa_tree_t) {
-      .comparator = user_comparator,
-      .nil = (aa_node_t) {
-        .left = &(user_db->user_index->data.nil),
-        .right = &(user_db->user_index->data.nil),
+    user_db->user_index->backing_nodes[0] = (user_t) {
+      .offset = 0,
+      .node = (aa_node_t) {
+        .left = 0,
+        .right = 0,
         .data = NULL,
-        .level = 0
+        .level = 0,
       },
-      .root = &(user_db->user_index->data.nil)
     };
+    user_db->user_index->search_root = 0;
 
     printf("all done!\n");
     const long PAGESIZE = sysconf(_SC_PAGESIZE);
     uintptr_t page_aligned_offset = (uintptr_t) user_db->user_index % PAGESIZE;
     uintptr_t page_aligned_addr = (uintptr_t) user_db->user_index - page_aligned_offset;
     msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_index_t), MS_ASYNC);
-  }*/
+  }
 }
 
 void end_user_db(void) {
@@ -132,19 +131,18 @@ void end_user_db(void) {
 }
 
 off_t get_user(char const * name) {
-  return 0;
   printf("[user_db]: get_user(%s)\n", name);
   aa_node_t * result = NULL;
   user_t user;
   strncpy(user.username, name, MAX_USERPASS_LEN);
   RWLOCK_RLOCK(&(user_db->rwlock_index));
-//   if (aa_find(&(user_db->user_index->data), (void *) &user, &result)) {
-//     RWLOCK_RUNLOCK(&(user_db->rwlock_index));
-//     return ((user_t *) result->data)->offset;
-//   } else {
-//     RWLOCK_RUNLOCK(&(user_db->rwlock_index));
-//     return -1;
-//   }
+  if (aa_find(user_comparator, &(user_db->user_index->backing_nodes[0].node), user_db->user_index->search_root, (void *) &user, &result, sizeof(user_t))) {
+    RWLOCK_RUNLOCK(&(user_db->rwlock_index));
+    return ((user_t *) result->data)->offset;
+  } else {
+    RWLOCK_RUNLOCK(&(user_db->rwlock_index));
+    return -1;
+  }
 }
 
 void update_user_data(off_t user_offset, object_t * object) {
@@ -158,20 +156,12 @@ void update_user_data(off_t user_offset, object_t * object) {
 }
 
 void get_user_data(off_t user_offset, object_t * object) {
-  *object = create_ship((SGVec3D_t) {
-      .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
-      .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
-      .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
-    },
-    (chunk_coord_t) {0,0,0});
-  return;
   RWLOCK_RLOCK(&(user_db->rwlock_data));
     memcpy(object, &(user_db->user_data[user_offset].self), sizeof(object_t));
   RWLOCK_RUNLOCK(&(user_db->rwlock_data));
 }
 
 off_t create_user(char const * username, char const * password) {
-  return 0;
   if (user_db->num_users >= user_db->max_users) {
     user_db->max_users *= 2;
     RWLOCK_WLOCK(&(user_db->rwlock_data));
@@ -194,7 +184,7 @@ off_t create_user(char const * username, char const * password) {
     user_t * free_user = user_db->user_index->backing_nodes + user_db->user_index->num_users;
     strncpy(free_user->username, username, MAX_USERPASS_LEN);
     user_offset = free_user->offset = user_db->user_index->num_users;
-//     aa_insert(&(user_db->user_index->data), (void *) free_user, &(free_user->node));
+    aa_insert(user_comparator, &(user_db->user_index->backing_nodes[0].node), &(user_db->user_index->search_root), (void *) free_user, user_offset, sizeof(user_t));
     void * new_user_addr = (void *) free_user;
 
     page_aligned_offset = (uintptr_t) new_user_addr % PAGESIZE;
@@ -226,9 +216,8 @@ off_t create_user(char const * username, char const * password) {
 
 
 off_t login(char const * username, char const * password) {
-  return 0;
   off_t user_offset = get_user(username);
-  printf("[user_db]: user_offset: %ld\n", user_offset);
+  printf("[user_db]: user_offset: %lld\n", user_offset);
   if (user_offset == -1) {
     return create_user(username, password);
   } else {
