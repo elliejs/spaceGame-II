@@ -128,13 +128,15 @@ void * pixel_task(void * nothing) {
 
       SGVec3D_t rays = create_rays(render_client.snapshot.self->ship.orientation, job->rot_x_sin, job->rot_x_cos, job->rot_y_sin, job->rot_y_cos);
 
-      // printf("pixel [y: %.2u, x: %.2u]: fore: %u, back: %u, shape: %u\n", job->y, job->x, pixel.fore, pixel.back, pixel.shape);
       raw_pixel_t raw_pixel = rays_to_pixel(rays, &(render_client.snapshot));
+
       pixel_t pixel = (pixel_t) {
         .fore = closest_color_index(raw_pixel.fore, render_client.colors, render_client.num_colors),
         .back = closest_color_index(raw_pixel.back, render_client.colors, render_client.num_colors),
         .shape = raw_pixel.shape
       };
+      // printf("pixel [y: %.2u, x: %.2u]: fore: %u, back: %u, shape: %u\n", job->y, job->x, pixel.fore, pixel.back, pixel.shape);
+
       render_client.framebuffer[job->y * render_client.width + job->x] = pixel;
       free(job);
     }
@@ -142,12 +144,6 @@ void * pixel_task(void * nothing) {
     free(job);
     SEM_POST(render_client.job_sem, 1);
     // printf("%d posted its telomere\n", tid);
-    // MTX_LOCK(&(render_client.job_mtx));
-    // printf("%d telomere locked\n", tid);
-    // COND_SIGNAL(&(render_client.job_cond));
-    // printf("%d telomere signalled\n", tid);
-    // MTX_UNLOCK(&(render_client.job_mtx));
-    // printf("%d telomere unlocked\n", tid);
   }
   printf("[render_client %u]: Thread's dead Jim!\n", render_client.id);
 }
@@ -211,15 +207,9 @@ void enqueue_render() {
         render_client.pixel_jobs_back = job;
 
       render_client.pixel_jobs_front = job;
-      // printf("new job posted\n");
       COND_SIGNAL(&(render_client.job_cond));
       MTX_UNLOCK(&(render_client.job_mtx));
     }
-
-    // MTX_LOCK(&(render_client.job_mtx));
-    // printf("Broadcasting\n");
-    // COND_BROADCAST(&(render_client.job_cond));
-    // MTX_UNLOCK(&(render_client.job_mtx));
   }
 
   for (int i = 0; i < NUM_THREADS; i++) {
@@ -235,8 +225,6 @@ void enqueue_render() {
       render_client.pixel_jobs_back = job;
 
     render_client.pixel_jobs_front = job;
-    // printf("telomere job queued\n");
-    // COND_SIGNAL(&(render_client.job_cond));
     MTX_UNLOCK(&(render_client.job_mtx));
   }
   MTX_LOCK(&(render_client.job_mtx));
