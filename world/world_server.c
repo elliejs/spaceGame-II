@@ -39,23 +39,25 @@ void start_world_server() {
 }
 
 void request_player(unsigned int id, off_t user_offset) {
-  printf("requesting player\n");
   MTX_LOCK(world_server->player_mtxs + id);
-
-  get_user_data(user_offset, world_server->players + id);
+  user_data_t user_data = get_user_data(user_offset);
+  load_ship(world_server->players + id, &user_data);
   MTX_UNLOCK(world_server->player_mtxs + id);
 
   MTX_LOCK(&(world_server->active_ids_mtx));
   PUSH_FAST_LIST(world_server->active_ids, id);
   MTX_UNLOCK(&(world_server->active_ids_mtx));
-
-  printf("player created\n");
 }
 
 void request_player_save(unsigned int id, off_t user_index) {
+  user_data_t user_data;
   MTX_LOCK(world_server->player_mtxs + id);
-  update_user_data(user_index, world_server->players + id);
+    user_data = (user_data_t) {
+      .origin = world_server->players[id].origin,
+      .abs_coord = world_server->players[id].ship.abs_coord,
+    };
   MTX_UNLOCK(world_server->player_mtxs + id);
+  update_user_data(user_index, &user_data);
 }
 
 void request_player_end(unsigned int id) {

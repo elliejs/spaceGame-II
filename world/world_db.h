@@ -29,17 +29,15 @@ chunk_t;
 typedef
 struct cache_item_s {
   //db_mtx protected
+  aa_node_t node;
+
   struct cache_item_s * prev;
   struct cache_item_s * next;
-  aa_node_t search_node;
-  unsigned int encoded_id;
   bool instantiated;
 
-  //db_cache_rwlock protected
-  pthread_rwlock_t db_cache_item_rwlock;
+  unsigned int encoded_id;
   chunk_t chunk;
-  object_t objects[MAX_OBJECTS + MAX_LIGHTS];
-  object_t * lights[MAX_LIGHTS];
+  off_t off;
 }
 cache_item_t;
 
@@ -51,9 +49,12 @@ struct world_db_s {
   cache_item_t * head;
   cache_item_t * tail;
   aa_tree_t search_tree;
+  off_t search_root;
 
   //db_cache_rwlock protected
-  cache_item_t backing_data[CACHE_LEN];
+  cache_item_t backing_data[CACHE_LEN + 1];
+  object_t objects[CACHE_LEN][MAX_OBJECTS + MAX_LIGHTS];
+  object_t * lights[CACHE_LEN][MAX_LIGHTS];
 }
 world_db_t;
 

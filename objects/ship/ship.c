@@ -121,3 +121,24 @@ object_t create_ship(SGVec3D_t origin, chunk_coord_t abs_coord) {
     }
   };
 }
+
+void load_ship(object_t * ship, user_data_t * user_data) {
+  *ship = (object_t) {
+    .radius = SGVec_Load_Const(30),
+    .distance = distance,
+    .color = color,
+    .ship = (ship_t) {
+      .orientation = DEFAULT_ORIENTATION,
+      .la = SGVec_Load_Const(24.),
+      .lb = SGVec_Load_Const(12.),
+      .height = SGVec_Load_Const(1.),
+      .rot_quats = DEFAULT_ROT_QUAT,
+      .vision = STANDARD,
+    }
+  };
+
+  ship->origin = user_data->origin;
+  ship->ship.abs_coord = user_data->abs_coord;
+}
+
+// void save_ship()

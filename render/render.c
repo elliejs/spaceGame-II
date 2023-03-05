@@ -105,7 +105,6 @@ march_result_t ray_march(SGVec3D_t origin, SGVec3D_t rays, world_snapshot_t * sn
 
 raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   //outgoing march
-  // printf("trying to go out\n");
   march_result_t march_result = ray_march(snapshot->self->origin, rays, snapshot, snapshot->self);
 
   if (lanes_false(march_result.validity)) {

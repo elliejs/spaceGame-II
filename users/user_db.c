@@ -12,31 +12,25 @@
 #include "../world/world_server.h"
 
 typedef
-struct user_data_s {
-  char password[MAX_USERPASS_LEN];
-  object_t self;
-}
-user_data_t;
-
-typedef
 struct user_s {
-  char username[MAX_USERPASS_LEN];
-  off_t offset;
   aa_node_t node;
+  char username[MAX_USERPASS_LEN];
+  char password[MAX_USERPASS_LEN];
+  off_t data_off;
 }
 user_t;
 
 typedef
 struct user_index_s {
   unsigned int num_users;
-  aa_tree_t data;
-  user_t backing_nodes[];
+  off_t search_root;
+  user_t backing_nodes[1];
 }
 user_index_t;
 
 typedef
 struct user_db_s {
-  unsigned int num_users;
+  aa_tree_t tree;
   unsigned int max_users;
 
   pthread_rwlock_t rwlock_index;
@@ -51,6 +45,7 @@ struct user_db_s {
 user_db_t;
 
 user_db_t * user_db = NULL;
+static long PAGESIZE;
 
 compare_t user_comparator(void * a, void * b) {
   user_t * a_item = (user_t *) a;
@@ -59,12 +54,78 @@ compare_t user_comparator(void * a, void * b) {
   return cmp > 0 ? GT : cmp < 0 ? LT : EQ ;
 }
 
+unsigned int get_num_users() {
+  unsigned int ret;
+  RWLOCK_RLOCK(&(user_db->rwlock_index));
+  ret = user_db->user_index->num_users;
+  RWLOCK_RUNLOCK(&(user_db->rwlock_index));
+  return ret;
+}
+
+bool reallocate_databases(bool initial) {
+  fstore_t store = (fstore_t) {
+    .fst_flags = F_ALLOCATECONTIG,
+    .fst_posmode = F_PEOFPOSMODE,
+    .fst_offset = 0,
+    .fst_length = DB_INC_SIZE * sizeof(user_data_t),
+  };
+
+  printf("a\n");
+
+  RWLOCK_WLOCK(&(user_db->rwlock_index));
+  if (!initial && user_db->user_index->num_users < user_db->max_users) {
+    printf("[user_db]: databases online.\n\tNUM: %u\tMAX: %d\n", user_db->user_index->num_users, user_db->max_users);
+    RWLOCK_WUNLOCK(&(user_db->rwlock_index));
+    return true;
+  }
+
+  if (user_db->user_index) munmap(user_db->user_index, user_db->user_index->num_users * sizeof(user_t) + sizeof(user_index_t));
+  store.fst_flags = F_ALLOCATECONTIG;
+  store.fst_length = DB_INC_SIZE * sizeof(user_t);
+  store.fst_bytesalloc = 0;
+  if (-1 == fcntl(user_db->user_index_fd, F_PREALLOCATE, &store)) {
+    printf("[user_db: user_index.database]: Can't make more user room. Trying noncontiguous allocation.\n\tstrerror: %s\n", strerror(errno));
+    store.fst_flags = 0;
+    if (-1 == fcntl(user_db->user_index_fd, F_PREALLOCATE, &store)) {
+      printf("[user_db: user_index.database]: Can't make more user room. DATABASE FULL.\n\tstrerror: %s\n", strerror(errno));
+      return false;
+    }
+  }
+
+  unsigned int added_index_slots = store.fst_bytesalloc / sizeof(user_t);
+
+  RWLOCK_WLOCK(&(user_db->rwlock_data));
+  if (user_db->user_data) munmap(user_db->user_data, user_db->user_index->num_users * sizeof(user_data_t));
+  store.fst_flags = F_ALLOCATECONTIG;
+  if (-1 == fcntl(user_db->user_data_fd, F_PREALLOCATE, &store)) {
+    printf("[user_db: user_data.database]: Can't make more user room. Trying noncontiguous allocation.\n\tstrerror: %s\n", strerror(errno));
+    store.fst_flags = 0;
+    if (-1 == fcntl(user_db->user_data_fd, F_PREALLOCATE, &store)) {
+      printf("[user_db: user_data.database]: Can't make more user room. DATABASE FULL.\n\tstrerror: %s\n", strerror(errno));
+      return false;
+    }
+  }
+  unsigned int added_data_slots = store.fst_bytesalloc / sizeof(user_data_t);
+
+
+  user_db->max_users += fminl(added_data_slots, added_index_slots);
+
+  user_db->user_index = mmap(NULL, user_db->max_users * sizeof(user_t) + sizeof(user_index_t), PROT_READ | PROT_WRITE, MAP_SHARED, user_db->user_index_fd, 0);
+  rebase_aa_tree(&(user_db->tree), (void *) &(user_db->user_index->backing_nodes[0].node), (void *) user_db->user_index->backing_nodes);
+  user_db->user_data = mmap(NULL, user_db->max_users * sizeof(user_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, user_db->user_data_fd, 0);
+  RWLOCK_WUNLOCK(&(user_db->rwlock_data));
+  RWLOCK_WUNLOCK(&(user_db->rwlock_index));
+
+  return true;
+}
+
 void start_user_db(void) {
-  return;
-    if (user_db != NULL) {
+  if (user_db != NULL) {
     printf("[user_db]: Already instantiated, not double-mallocing\n");
     return;
   }
+
+  PAGESIZE = sysconf(_SC_PAGESIZE);
 
   user_db = (user_db_t *) mmap(NULL, sizeof(user_db_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
   RWLOCK_INIT(&(user_db->rwlock_data));
@@ -82,39 +143,41 @@ void start_user_db(void) {
     user_db->user_data_fd = open("users/user_data.database", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     data_exists = true;
   }
-  printf("should have opened both database files by now\n");
+
   if (index_exists ^ data_exists) {
     printf("[user_db]: users database corrupted.\n\tuser_index.database file %s exist.\n\tuser_data.database file %s exist.\n\tServer Corrupted. Delete all database files or restore from backup.",
            index_exists ? "DOES" : "DOES NOT",
            data_exists ? "DOES" : "DOES NOT");
   }
+  unsigned int num_users_temp = 0;
   if (!index_exists && !data_exists) {
-    printf("num_users 0 since new db\n");
-    user_db->num_users = 0;
+    printf("[user_db]: databases not found. creating new...\n");
   } else {
-    read(user_db->user_index_fd, &(user_db->num_users),  sizeof(unsigned int));
+    read(user_db->user_index_fd, &(num_users_temp),  sizeof(unsigned int));
   }
-  user_db->max_users = fmaxl(user_db->num_users * 2, MIN_DB_SIZE);
-  printf("max users %d\n", user_db->max_users);
-  user_db->user_index = mmap(NULL, user_db->max_users * sizeof(user_t) + sizeof(user_index_t), PROT_READ | PROT_WRITE, MAP_SHARED, user_db->user_index_fd, 0);
-  user_db->user_data = mmap(NULL, user_db->max_users * sizeof(user_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, user_db->user_data_fd, 0);
+  user_db->max_users = fmaxl(num_users_temp + DB_INC_SIZE, MIN_DB_SIZE);
+
+  user_db->user_data = NULL;
+  user_db->user_index = NULL;
+  user_db->tree = create_aa_tree(NULL, sizeof(user_t), NULL, user_comparator);
+  if (!reallocate_databases(true))
+    return;
 
   if (!index_exists && !data_exists) {
-    printf("making new user_index aa_tree\n");
-    user_db->user_index->num_users = 0;
-    user_db->user_index->data = (aa_tree_t) {
-      .comparator = user_comparator,
-      .nil = (aa_node_t) {
-        .left = &(user_db->user_index->data.nil),
-        .right = &(user_db->user_index->data.nil),
-        .data = NULL,
-        .level = 0
-      },
-      .root = &(user_db->user_index->data.nil)
-    };
-
-    printf("all done!\n");
-    const long PAGESIZE = sysconf(_SC_PAGESIZE);
+    printf("[user_db]: Creating header data within the user_index database\n");
+    RWLOCK_WLOCK(&(user_db->rwlock_index));
+      ftruncate(user_db->user_index_fd, sizeof(user_index_t));
+      user_db->user_index->num_users = 0;
+      user_db->user_index->backing_nodes[0] = (user_t) {
+        .data_off = 0,
+        .node = (aa_node_t) {
+          .left = 0,
+          .right = 0,
+          .level = 0,
+        },
+      };
+      user_db->user_index->search_root = 0;
+    RWLOCK_WUNLOCK(&(user_db->rwlock_index));
     uintptr_t page_aligned_offset = (uintptr_t) user_db->user_index % PAGESIZE;
     uintptr_t page_aligned_addr = (uintptr_t) user_db->user_index - page_aligned_offset;
     msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_index_t), MS_ASYNC);
@@ -124,6 +187,8 @@ void start_user_db(void) {
 void end_user_db(void) {
   RWLOCK_DESTROY(&(user_db->rwlock_data));
   RWLOCK_DESTROY(&(user_db->rwlock_index));
+  // ftruncate(user_db->user_index_fd, user_db->user_index->num_users * sizeof(user_t) + sizeof(user_index_t));
+  // ftruncate(user_db->user_data_fd, user_db->user_index->num_users * sizeof(user_data_t));
   munmap(user_db->user_index, user_db->max_users * sizeof(user_t) + sizeof(user_index_t));
   munmap(user_db->user_data, user_db->max_users * sizeof(user_data_t));
   munmap(user_db, sizeof(user_db_t));
@@ -131,112 +196,106 @@ void end_user_db(void) {
   close(user_db->user_data_fd);
 }
 
-off_t get_user(char const * name) {
-  printf("[user_db]: get_user(%s)\n", name);
-  aa_node_t * result = NULL;
+enum auth_fail_e {
+  WRONG_PASS = -2,
+  NO_USRNAME = -1,
+};
+
+off_t get_user(char const * name, char const * pass) {
+  user_t * result = NULL;
   user_t user;
   strncpy(user.username, name, MAX_USERPASS_LEN);
   RWLOCK_RLOCK(&(user_db->rwlock_index));
-  if (aa_find(&(user_db->user_index->data), (void *) &user, &result)) {
+  if (aa_find(&(user_db->tree), user_db->user_index->search_root, (void *) &user, (void *) &result)) {
+    if(!strncmp(result->password, pass, MAX_USERPASS_LEN)) {
+      off_t ret = result->data_off;
+      RWLOCK_RUNLOCK(&(user_db->rwlock_index));
+      return ret;
+    }
     RWLOCK_RUNLOCK(&(user_db->rwlock_index));
-    return ((user_t *) result->data)->offset;
-  } else {
-    RWLOCK_RUNLOCK(&(user_db->rwlock_index));
-    return -1;
+    return WRONG_PASS;
   }
+  RWLOCK_RUNLOCK(&(user_db->rwlock_index));
+  return NO_USRNAME;
 }
 
-void update_user_data(off_t user_offset, object_t * object) {
-  const long PAGESIZE = sysconf(_SC_PAGESIZE);
+void update_user_data(off_t user_offset, user_data_t * user_data) {
   RWLOCK_WLOCK(&(user_db->rwlock_data));
-    memcpy(&(user_db->user_data[user_offset].self), object, sizeof(object_t));
+    memcpy(user_db->user_data + user_offset, user_data, sizeof(user_data_t));
     uintptr_t page_aligned_offset = (uintptr_t) (user_db->user_data + user_offset) % PAGESIZE;
     uintptr_t page_aligned_addr = (uintptr_t) (user_db->user_data + user_offset) - page_aligned_offset;
     msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_data_t), MS_ASYNC);
   RWLOCK_WUNLOCK(&(user_db->rwlock_data));
 }
 
-void get_user_data(off_t user_offset, object_t * object) {
-  *object = create_ship((SGVec3D_t) {
-      .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
-      .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
-      .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
-    },
-    (chunk_coord_t) {0,0,0});
-  return;
+user_data_t get_user_data(off_t user_offset) {
+  user_data_t user_data;
   RWLOCK_RLOCK(&(user_db->rwlock_data));
-    memcpy(object, &(user_db->user_data[user_offset].self), sizeof(object_t));
+    user_data = user_db->user_data[user_offset];
   RWLOCK_RUNLOCK(&(user_db->rwlock_data));
+  return user_data;
 }
 
 off_t create_user(char const * username, char const * password) {
-  if (user_db->num_users >= user_db->max_users) {
-    user_db->max_users *= 2;
-    RWLOCK_WLOCK(&(user_db->rwlock_data));
-      munmap(user_db->user_data, user_db->num_users * sizeof(user_data_t));
-      user_db->user_data = mmap(NULL, user_db->max_users * sizeof(user_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, user_db->user_data_fd, 0);
-    RWLOCK_WUNLOCK(&(user_db->rwlock_data));
-
-    RWLOCK_WLOCK(&(user_db->rwlock_index));
-      munmap(user_db->user_index, user_db->num_users * sizeof(user_t) + sizeof(user_index_t));
-      user_db->user_index = mmap(NULL, user_db->max_users * sizeof(user_t) + sizeof(user_index_t), PROT_READ | PROT_WRITE, MAP_SHARED, user_db->user_index_fd, 0);
-    RWLOCK_WUNLOCK(&(user_db->rwlock_index));
-  }
-
-  off_t user_offset = -1;
+  off_t user_data_offset = -1;
   uintptr_t page_aligned_addr;
   uintptr_t page_aligned_offset;
-  const long PAGESIZE = sysconf(_SC_PAGESIZE);
+
+  if (!reallocate_databases(false)) {
+    return -1;
+  }
 
   RWLOCK_WLOCK(&(user_db->rwlock_index));
+    ftruncate(user_db->user_index_fd, ++(user_db->user_index->num_users) * sizeof(user_t) + sizeof(user_index_t));
     user_t * free_user = user_db->user_index->backing_nodes + user_db->user_index->num_users;
+    user_data_offset = user_db->user_index->num_users - 1;
+    free_user->data_off = user_data_offset;
     strncpy(free_user->username, username, MAX_USERPASS_LEN);
-    user_offset = free_user->offset = user_db->user_index->num_users;
-    aa_insert(&(user_db->user_index->data), (void *) free_user, &(free_user->node));
-    void * new_user_addr = (void *) free_user;
+    strncpy(free_user->password, password, MAX_USERPASS_LEN);
 
-    page_aligned_offset = (uintptr_t) new_user_addr % PAGESIZE;
-    page_aligned_addr = (uintptr_t) new_user_addr - page_aligned_offset;
+    aa_insert(&(user_db->tree), &(user_db->user_index->search_root), user_db->user_index->num_users);
+
+    page_aligned_offset = (uintptr_t) free_user % PAGESIZE;
+    page_aligned_addr = (uintptr_t) free_user - page_aligned_offset;
     msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_t), MS_ASYNC);
 
-    user_db->user_index->num_users++;
+    page_aligned_offset = (uintptr_t) &(user_db->user_index) % PAGESIZE;
+    page_aligned_addr = (uintptr_t) &(user_db->user_index) - page_aligned_offset;
+    msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_index_t), MS_ASYNC);
 
-    page_aligned_offset = (uintptr_t) &(user_db->user_index->num_users) % PAGESIZE;
-    page_aligned_addr = (uintptr_t) &(user_db->user_index->num_users) - page_aligned_offset;
-    msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_db->user_index->num_users), MS_ASYNC);
+  RWLOCK_WLOCK(&(user_db->rwlock_data));
+    ftruncate(user_db->user_data_fd, user_db->user_index->num_users * sizeof(user_data_t));
+  RWLOCK_WUNLOCK(&(user_db->rwlock_data));
   RWLOCK_WUNLOCK(&(user_db->rwlock_index));
 
-
-  RWLOCK_WLOCK(&(user_db->rwlock_index));
-    memcpy(user_db->user_data[user_offset].password, password, MAX_USERPASS_LEN);
-  RWLOCK_WUNLOCK(&(user_db->rwlock_index));
-
-  object_t self = create_ship((SGVec3D_t) {
+  user_data_t user_data = (user_data_t) {
+    .origin = (SGVec3D_t) {
       .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
       .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
       .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
     },
-    (chunk_coord_t) {0,0,0});
-  update_user_data(user_offset, &self);
+    .abs_coord = (chunk_coord_t) {0,0,0}
+  };
 
-  return user_offset;
+  update_user_data(user_data_offset, &user_data);
+
+  return user_data_offset;
 }
 
 
 off_t login(char const * username, char const * password) {
-  return 0;
-  off_t user_offset = get_user(username);
-  printf("[user_db]: user_offset: %ld\n", user_offset);
-  if (user_offset == -1) {
-    return create_user(username, password);
-  } else {
-      RWLOCK_RLOCK(&(user_db->rwlock_data));
-      user_data_t * user_data = user_db->user_data + user_offset;
-      if (!strncmp(password, user_data->password, MAX_USERPASS_LEN)) {
-        RWLOCK_RUNLOCK(&(user_db->rwlock_data));
-        return user_offset;
-      }
-      RWLOCK_RUNLOCK(&(user_db->rwlock_data));
+  // aa_error_check(&(user_db->tree), user_db->user_index->search_root, user_db->max_users);
+  off_t user_offset = get_user(username, password);
+  switch (user_offset) {
+    case NO_USRNAME:
+      printf("[user_db]: LOGIN: <%s:%s> %s\n", username, password, "CREATE");
+      return create_user(username, password);
+
+    case WRONG_PASS:
+      printf("[user_db]: LOGIN: <%s:%s> %s\n", username, password, "WRONG PASS");
+      return -1;
+    default:
+      printf("[user_db]: LOGIN: <%s:%s> %s\n", username, password, "SUCCESS");
+      return user_offset;
   }
-  return -1;
 }
