@@ -15,7 +15,7 @@ aa_node_t * get_rel_node(aa_tree_t * tree, aa_node_t * node, off_t rel_off) {
 
 static inline
 void * get_data(aa_tree_t * tree, aa_node_t * node) {
-  return (void *)((uintptr_t) node + tree->data_off);
+  return (void *)((unsigned char *) node + tree->data_off);
 }
 
 off_t skew(aa_tree_t * tree, aa_node_t * node) {

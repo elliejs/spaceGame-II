@@ -157,33 +157,61 @@ void enqueue_render() {
   MTX_UNLOCK(&(render_client.job_mtx));
 
   SEM_POSTVAL(render_client.job_sem, 0, NUM_THREADS);
+  const float x_neg_cos_restart = cosf(-render_client.half_fov_x - render_client.quarter_rot_x);
+  const float x_neg_sin_restart = sinf(-render_client.half_fov_x - render_client.quarter_rot_x);
+
+  const float rot_step_y_cos = cosf(render_client.rot_finder_y / 2);
+  const float rot_step_y_sin = sinf(render_client.rot_finder_y / 2);
+
+  const float rot_step_x_cos = cosf(render_client.rot_finder_x / 2);
+  const float rot_step_x_sin = sinf(render_client.rot_finder_x / 2);
+
+  float y_neg_cos = cosf(-render_client.half_fov_y - render_client.quarter_rot_y);
+  float y_neg_sin = sinf(-render_client.half_fov_y - render_client.quarter_rot_y);
+
+
   for (int y = 0; y < render_client.height; y++) {
-    const float rot_y = y * render_client.rot_finder_y - render_client.half_fov_y;
 
-    const float rot_y_neg = rot_y - render_client.quarter_rot_y;
-    const float rot_y_neg_sin = sinf(rot_y_neg);
-    const float rot_y_neg_cos = cosf(rot_y_neg);
+    float y_pos_cos = rot_step_y_cos * y_neg_cos - rot_step_y_sin * y_neg_sin;
+    float y_pos_sin = rot_step_y_sin * y_neg_cos + rot_step_y_cos * y_neg_sin;
 
-    const float rot_y_pos = rot_y + render_client.quarter_rot_y;
-    const float rot_y_pos_sin = sinf(rot_y_pos);
-    const float rot_y_pos_cos = cosf(rot_y_pos);
+    // const float rot_y = y * render_client.rot_finder_y - render_client.half_fov_y;
+    //
+    // const float rot_y_neg = rot_y - render_client.quarter_rot_y;
+    // const float rot_y_neg_sin = sinf(rot_y_neg);
+    // const float rot_y_neg_cos = cosf(rot_y_neg);
+    //
+    // const float rot_y_pos = rot_y + render_client.quarter_rot_y;
+    // const float rot_y_pos_sin = sinf(rot_y_pos);
+    // const float rot_y_pos_cos = cosf(rot_y_pos);
+    //
 
-    const SGVec rot_y_sin = SGVec_Load_Array(((float[]) {rot_y_pos_sin, rot_y_pos_sin, rot_y_neg_sin, rot_y_neg_sin}));
-    const SGVec rot_y_cos = SGVec_Load_Array(((float[]) {rot_y_pos_cos, rot_y_pos_cos, rot_y_neg_cos, rot_y_neg_cos}));
+    const SGVec rot_y_cos = SGVec_Load_Array(((float[]) {y_pos_cos, y_pos_cos, y_neg_cos, y_neg_cos}));
+    const SGVec rot_y_sin = SGVec_Load_Array(((float[]) {y_pos_sin, y_pos_sin, y_neg_sin, y_neg_sin}));
+
+    y_neg_cos = rot_step_y_cos * y_pos_cos - rot_step_y_sin * y_pos_sin;
+    y_neg_sin = rot_step_y_sin * y_pos_cos + rot_step_y_cos * y_pos_sin;
+
+    float x_neg_cos = x_neg_cos_restart;
+    float x_neg_sin = x_neg_sin_restart;
 
     for (int x = 0; x < render_client.width; x++) {
-      const float rot_x = x * render_client.rot_finder_x - render_client.half_fov_x;
 
-      const float rot_x_neg = rot_x - render_client.quarter_rot_x;
-      const float rot_x_neg_sin = sinf(rot_x_neg);
-      const float rot_x_neg_cos = cosf(rot_x_neg);
+      float x_pos_cos = rot_step_x_cos * x_neg_cos - rot_step_x_sin * x_neg_sin;
+      float x_pos_sin = rot_step_x_sin * x_neg_cos + rot_step_x_cos * x_neg_sin;
 
-      const float rot_x_pos = rot_x + render_client.quarter_rot_x;
-      const float rot_x_pos_sin = sinf(rot_x_pos);
-      const float rot_x_pos_cos = cosf(rot_x_pos);
+      // const float rot_x = x * render_client.rot_finder_x - render_client.half_fov_x;
+      //
+      // const float rot_x_neg = rot_x - render_client.quarter_rot_x;
+      // const float rot_x_neg_sin = sinf(rot_x_neg);
+      // const float rot_x_neg_cos = cosf(rot_x_neg);
+      //
+      // const float rot_x_pos = rot_x + render_client.quarter_rot_x;
+      // const float rot_x_pos_sin = sinf(rot_x_pos);
+      // const float rot_x_pos_cos = cosf(rot_x_pos);
 
-      const SGVec rot_x_sin = SGVec_Load_Array(((float[]) {rot_x_neg_sin, rot_x_pos_sin, rot_x_neg_sin, rot_x_pos_sin}));
-      const SGVec rot_x_cos = SGVec_Load_Array(((float[]) {rot_x_neg_cos, rot_x_pos_cos, rot_x_neg_cos, rot_x_pos_cos}));
+      const SGVec rot_x_cos = SGVec_Load_Array(((float[]) {x_neg_cos, x_pos_cos, x_neg_cos, x_pos_cos}));
+      const SGVec rot_x_sin = SGVec_Load_Array(((float[]) {x_neg_sin, x_pos_sin, x_neg_sin, x_pos_sin}));
 
       pixel_job_t * job = malloc(sizeof(pixel_job_t));
       *job = (pixel_job_t) {
@@ -209,6 +237,9 @@ void enqueue_render() {
       render_client.pixel_jobs_front = job;
       COND_SIGNAL(&(render_client.job_cond));
       MTX_UNLOCK(&(render_client.job_mtx));
+
+      x_neg_cos = rot_step_x_cos * x_pos_cos - rot_step_x_sin * x_pos_sin;
+      x_neg_sin = rot_step_x_sin * x_pos_cos + rot_step_x_cos * x_pos_sin;
     }
   }
 

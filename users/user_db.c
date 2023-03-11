@@ -71,8 +71,9 @@ bool reallocate_databases(bool initial) {
   };
 
   RWLOCK_WLOCK(&(user_db->rwlock_index));
-  printf("[user_db]: databases online.\n\tNUM: %u\tMAX: %d\n", user_db->user_index->num_users, user_db->max_users);
+
   if (!initial && user_db->user_index->num_users < user_db->max_users) {
+    printf("[user_db]: databases online.\n\tNUM: %u\tMAX: %d\n", user_db->user_index->num_users, user_db->max_users);
     RWLOCK_WUNLOCK(&(user_db->rwlock_index));
     return true;
   }
