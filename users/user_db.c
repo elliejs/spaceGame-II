@@ -1,9 +1,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <unistd.h>
 #include <errno.h>
 
 #include "user_db.h"
@@ -63,12 +63,14 @@ unsigned int get_num_users() {
 }
 
 bool reallocate_databases(bool initial) {
+#if defined(__APPLE__)
   fstore_t store = (fstore_t) {
     .fst_flags = F_ALLOCATECONTIG,
     .fst_posmode = F_PEOFPOSMODE,
     .fst_offset = 0,
     .fst_length = DB_INC_SIZE * sizeof(user_data_t),
   };
+#endif
 
   RWLOCK_WLOCK(&(user_db->rwlock_index));
 
@@ -78,7 +80,13 @@ bool reallocate_databases(bool initial) {
     return true;
   }
 
-  if (user_db->user_index) munmap(user_db->user_index, user_db->user_index->num_users * sizeof(user_t) + sizeof(user_index_t));
+  unsigned int added_data_slots = 0;
+  unsigned int added_index_slots = 0;
+  unsigned int num_users = 0;
+  if (!initial) num_users = user_db->user_index->num_users;
+
+  if (user_db->user_index) munmap(user_db->user_index, num_users * sizeof(user_t) + sizeof(user_index_t));
+#if defined(__APPLE__) //TODO: THIS BRANCH IS SUPER NOT DOING WHAT IT'S SUPPOSED TO DO
   store.fst_flags = F_ALLOCATECONTIG;
   store.fst_length = DB_INC_SIZE * sizeof(user_t);
   store.fst_bytesalloc = 0;
@@ -91,10 +99,10 @@ bool reallocate_databases(bool initial) {
     }
   }
 
-  unsigned int added_index_slots = store.fst_bytesalloc / sizeof(user_t);
+  added_index_slots = store.fst_bytesalloc / sizeof(user_t);
 
   RWLOCK_WLOCK(&(user_db->rwlock_data));
-  if (user_db->user_data) munmap(user_db->user_data, user_db->user_index->num_users * sizeof(user_data_t));
+  if (user_db->user_data) munmap(user_db->user_data, num_users * sizeof(user_data_t));
   store.fst_flags = F_ALLOCATECONTIG;
   if (-1 == fcntl(user_db->user_data_fd, F_PREALLOCATE, &store)) {
     printf("[user_db: user_data.database]: Can't make more user room. Trying noncontiguous allocation.\n\tstrerror: %s\n", strerror(errno));
@@ -104,8 +112,20 @@ bool reallocate_databases(bool initial) {
       return false;
     }
   }
-  unsigned int added_data_slots = store.fst_bytesalloc / sizeof(user_data_t);
+  added_data_slots = store.fst_bytesalloc / sizeof(user_data_t);
+#else
+  off_t offset = num_users * sizeof(user_t) + sizeof(user_index_t);
+  off_t len = DB_INC_SIZE * sizeof(user_t);
+  if (posix_fallocate(user_db->user_index_fd, offset, len))
+    printf("[user_db: user_index.database]: Can't make more user room.\n\tstrerror: %s\n", strerror(errno));
 
+  RWLOCK_WLOCK(&(user_db->rwlock_data));
+  if (user_db->user_data) munmap(user_db->user_data, num_users * sizeof(user_data_t));
+  offset = num_users * sizeof(user_data_t);
+  len = DB_INC_SIZE * sizeof(user_data_t);
+  if (posix_fallocate(user_db->user_index_fd, offset, len))
+    printf("[user_db: user_index.database]: Can't make more user room.\n\tstrerror: %s\n", strerror(errno));
+#endif
 
   user_db->max_users += fminl(added_data_slots, added_index_slots);
 
