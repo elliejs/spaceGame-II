@@ -19,3 +19,9 @@ jobs:
 
     - name: optimized
       run: make optimized
+
+    - name: Upload Built Artifacts
+      uses: actions/upload-artifact@v3
+        with:
+          name: spacegame
+          path: x86_64
