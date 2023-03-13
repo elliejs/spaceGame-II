@@ -23,4 +23,5 @@ jobs:
     - name: Upload Built Artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: spaceGame
+        name: x86_64/spaceGame
+        path: spaceGame
