@@ -1,11 +1,11 @@
 #include "object.h"
 #include "../render/render.h"
 
-extern inline
-SGVec SGVec_smooth_min(SGVec a, SGVec b, float k);
-
-extern inline
-SGVec SGVec_smooth_max(SGVec a, SGVec b, float k);
+// extern inline
+// SGVec SGVec_smooth_min(SGVec a, SGVec b, float k);
+//
+// extern inline
+// SGVec SGVec_smooth_max(SGVec a, SGVec b, float k);
 
 SGVec3D_t surface_normal(object_t * self, SGVec3D_t point, unsigned int cube_idx) {
   SGVec dist_pnn = self->distance(self, (SGVec3D_t) {

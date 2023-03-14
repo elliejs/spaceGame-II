@@ -172,7 +172,8 @@ void start_user_db(void) {
   if (!index_exists && !data_exists) {
     printf("[user_db]: databases not found. creating new...\n");
   } else {
-    read(user_db->user_index_fd, &(num_users_temp),  sizeof(unsigned int));
+    if (read(user_db->user_index_fd, &(num_users_temp),  sizeof(unsigned int)) == -1)
+          printf("[user_db]: start_user_db: Can't read num users from user_index database file.\n\tstrerror: %s\n", strerror(errno));
   }
   user_db->max_users = fmaxl(num_users_temp + DB_INC_SIZE, MIN_DB_SIZE);
 
@@ -185,7 +186,8 @@ void start_user_db(void) {
   if (!index_exists && !data_exists) {
     printf("[user_db]: Creating header data within the user_index database\n");
     RWLOCK_WLOCK(&(user_db->rwlock_index));
-      ftruncate(user_db->user_index_fd, sizeof(user_index_t));
+      if (ftruncate(user_db->user_index_fd, sizeof(user_index_t)))
+          printf("[user_db]: start_user_db: Can't set user_index database file to header length.\n\tstrerror: %s\n", strerror(errno));
       user_db->user_index->num_users = 0;
       user_db->user_index->backing_nodes[0] = (user_t) {
         .data_off = 0,
@@ -265,7 +267,9 @@ off_t create_user(char const * username, char const * password) {
   }
 
   RWLOCK_WLOCK(&(user_db->rwlock_index));
-    ftruncate(user_db->user_index_fd, ++(user_db->user_index->num_users) * sizeof(user_t) + sizeof(user_index_t));
+    if (ftruncate(user_db->user_index_fd, ++(user_db->user_index->num_users) * sizeof(user_t) + sizeof(user_index_t)))
+            printf("[user_db]: create_user: <%s:%s> can't set user_index database to required length.\n\tstrerror: %s\n", username, password, strerror(errno));
+
     user_t * free_user = user_db->user_index->backing_nodes + user_db->user_index->num_users;
     user_data_offset = user_db->user_index->num_users - 1;
     free_user->data_off = user_data_offset;
@@ -283,7 +287,8 @@ off_t create_user(char const * username, char const * password) {
     msync((void *) page_aligned_addr, page_aligned_offset + sizeof(user_index_t), MS_ASYNC);
 
   RWLOCK_WLOCK(&(user_db->rwlock_data));
-    ftruncate(user_db->user_data_fd, user_db->user_index->num_users * sizeof(user_data_t));
+    if (ftruncate(user_db->user_data_fd, user_db->user_index->num_users * sizeof(user_data_t)))
+      printf("[user_db]: create_user: <%s:%s> can't set user_data database to required length.\n\tstrerror: %s\n", username, password, strerror(errno));
   RWLOCK_WUNLOCK(&(user_db->rwlock_data));
   RWLOCK_WUNLOCK(&(user_db->rwlock_index));
 

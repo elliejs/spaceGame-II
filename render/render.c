@@ -125,7 +125,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
     float fore_dist = 0;
     float L = 50;
     float C = 1.1;
-    float rainbow_dist = 1.;
+//     float rainbow_dist = 1.;
     if (lanes_true(march_result.validity)) {
       float dist_avg = 0;
       float back_dist = 0;
