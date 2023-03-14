@@ -43,7 +43,7 @@ int auth_password_callback(ssh_session session, const char *user, const char *pa
   }
 
   off_t user_index = login(user, password);
-  printf("\t[ssh_client %u]: user_index: %lld\n", ssh_client->id, user_index);
+  printf("\t[ssh_client %u]: user_index: %jd\n", ssh_client->id, user_index);
   if(user_index >= 0) {
     ssh_client->authenticated = true;
     ssh_client->user_index = user_index;

@@ -88,13 +88,13 @@ unsigned int aa_error_check_helper(aa_tree_t * tree, off_t abs_off, off_t max_of
   }
   if (abs_off < 0 || abs_off > max_off) {
     for (unsigned int i = 0; i < depth; i++) printf("\t");
-    printf("[node %u]: off %lld out of bounds\n", agg, abs_off);
+    printf("[node %u]: off %jd out of bounds\n", agg, abs_off);
     return agg + 1;
   }
   if (get_node(tree, abs_off)->left == 0 && get_node(tree, abs_off)->right == 0) return agg;
   agg = aa_error_check_helper(tree, abs_off + get_node(tree, abs_off)->left, max_off, agg, depth + 1);
   for (unsigned int i = 0; i < depth; i++) printf("\t");
-  printf("[node %u]: off %lld\n", agg++, abs_off);
+  printf("[node %u]: off %jd\n", agg++, abs_off);
   agg = aa_error_check_helper(tree, abs_off + get_node(tree, abs_off)->right, max_off, agg, depth + 1);
   return agg;
 }
