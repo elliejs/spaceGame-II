@@ -12,8 +12,22 @@ Over the course of the project's development I've rewritten many libraries, impl
 
 The graphics pipeline is based around a ray marcher, which includes occlusive shadows, ambient and point lighting, and color blending and matching based off [oklab](https://bottosson.github.io/posts/oklab/); Björn Ottosson's numerically stable interpretation of the recent CAM16-UCS and CIELUV descriptions of color theory, combining speed and fidelity to the real world. The ray marcher is multithreaded, processing tasks from a pool of yet-to-be rendered pixels, which lets the CPU operate on all cores at the same time, drastically speeding up rendering times per frame.
 
+## Feature Roadmap:
+- MIGRATED TO [changelog.md](changelog.md)
+
+---
 
 ## Running your own SpaceGame Server
+
+### Download:
+**All binary downloads still require keys to be installed.** [keygen.sh](keygen.sh) (as `bash`)
+x86_64 based linux (and most likely posix) users can download and run binaries from build artifacts in this github repository.
+- ARMv8 NEON binaries are not currently available. Please build from source.
+
+### Supported Platforms
+
+- ARMv8 with NEON
+- x86_64 with SSE4.2
 
 ### Building:
 There are many build targets available with make.
@@ -25,44 +39,16 @@ There are many build targets available with make.
 - **clean**: removes all object files.
 - **help**: prints all targets
 
-### Dependencies:
+### Build Dependencies:
 
 - [libssh](https://www.libssh.org/)
   - available through apt as libssh-dev and I'm sure practically every package manager has an option too.
 
 ### Running
 
-- make sure server keys are populated by running [keygen.sh](keygen.sh) (as `bash`)
+- Populate server keys by running [keygen.sh](keygen.sh) (as `bash`) **!!Required On First Run!!**
 
-- run the server as: `./spaceGame [optional IPv4 bindaddr]`
+- Run server: `./spaceGame [optional IPv4 bindaddr]`
 
-- run the client as: `ssh jelly@[127.0.0.1 or bindaddr supplied to server] -p 2222`, password is 'toast'
-
-### Supported Platforms
-
-- ARMv8 with NEON
-- x86_64 with SSE4.2
-
----
-
-## Feature Roadmap:
-
-- [X] ~~script for server owners to generate required keys~~
-  - **[FIX]** [keygen.sh](keygen.sh)
-- [X] ~~runtime bindaddr selection~~
-- [X] ~~Makefile for ease of building and configuration~~
-  - **[FIX]** [Makefile](Makefile)
-- [X] ~~x86_64 Support~~
-  - ~~While this is still in progress, spaceGame can now compile and vaguely run on x86_64 which is a huge success. More development is required, and will be the upcoming focus.~~
-  - ~~SIMD is fully ported to SSE4.2, meaning any INTEL cpu newer than Nov 2008 should be supported.~~
-- [WONT DO] ~~Move from SIMD to Vulkan, to make more platforms available~~
-  - Since Vulkan requires so much boilerplate and GPU ray-marching isn't *really that* optimizable anyway, this has been forgone in favor of just buying more threads and cpus.
-- [ ] Persistent user profiles.
-  - [ ] user keymaps for Colemak, Dvorak, etc
-  - [ ] save-states for location, health, inventory, etc
-- [ ] Friend sharing and waypointing
-- [ ] better planet gen
- - More planets, revolution, rotation, and orbital stellar systems
- -
-- [ ] Speed Optimizations
-  - [ ] hoist as many constants to compile time as possible
+- Run client: `ssh [username]@[127.0.0.1 or bindaddr supplied to server] -p 2222`
+  - password can be set for any new user in the user database at their first login
