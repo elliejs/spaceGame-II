@@ -13,15 +13,14 @@ Over the course of the project's development I've rewritten many libraries, impl
 The graphics pipeline is based around a ray marcher, which includes occlusive shadows, ambient and point lighting, and color blending and matching based off [oklab](https://bottosson.github.io/posts/oklab/); Björn Ottosson's numerically stable interpretation of the recent CAM16-UCS and CIELUV descriptions of color theory, combining speed and fidelity to the real world. The ray marcher is multithreaded, processing tasks from a pool of yet-to-be rendered pixels, which lets the CPU operate on all cores at the same time, drastically speeding up rendering times per frame.
 
 ## Feature Roadmap:
-- MIGRATED TO [changelog.md](changelog.md)
-
----
+- Migrated to [changelog.md](changelog.md)
 
 ## Running your own SpaceGame Server
 
 ### Download:
 **All binary downloads still require keys to be installed.** [keygen.sh](keygen.sh) (as `bash`)
-x86_64 based linux (and most likely posix) users can download and run binaries from build artifacts in this github repository.
+
+- x86_64 based linux (and most likely posix) users can download and run binaries from build artifacts in this github repository.
 - ARMv8 NEON binaries are not currently available. Please build from source.
 
 ### Supported Platforms
@@ -39,7 +38,7 @@ There are many build targets available with make.
 - **clean**: removes all object files.
 - **help**: prints all targets
 
-### Build Dependencies:
+### Dependencies:
 
 - [libssh](https://www.libssh.org/)
   - available through apt as libssh-dev and I'm sure practically every package manager has an option too.
