@@ -17,6 +17,14 @@ struct SGVec3D_s {
 SGVec3D_t;
 
 typedef
+struct SGFrame_s {
+  SGVec3D_t forward;
+  SGVec3D_t right;
+  SGVec3D_t up;
+}
+SGFrame_t;
+
+typedef
 struct SGVec4D_s {
   SGVec x;
   SGVec y;
@@ -26,6 +34,25 @@ struct SGVec4D_s {
 SGVec4D_t;
 
 #define SGVec4D_IDENTITY (SGVec4D_t) {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO, SGVec_ONE}
+
+#define SGFrame_IDENTITY \
+(SGFrame_t) { \
+  .up = (SGVec3D_t) { \
+    .x = SGVec_ZERO, \
+    .y = SGVec_ONE, \
+    .z = SGVec_ZERO \
+  }, \
+  .forward = (SGVec3D_t) { \
+    .x = SGVec_ZERO, \
+    .y = SGVec_ZERO, \
+    .z = SGVec_ONE, \
+  }, \
+  .right = (SGVec3D_t) { \
+    .x = SGVec_ONE, \
+    .y = SGVec_ZERO, \
+    .z = SGVec_ZERO \
+  } \
+}
 
 #define SGVec3D_ZERO (SGVec3D_t) {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO}
 
@@ -261,6 +288,15 @@ SGVec3D_t rot_vec3d(SGVec4D_t rot_quat, SGVec3D_t p) {
     .x = r_x,
     .y = r_y,
     .z = r_z
+  };
+}
+
+inline
+SGFrame_t rot_frame(SGVec4D_t rot, SGFrame_t frame) {
+  return (SGFrame_t) {
+    .forward = rot_vec3d(rot, frame.forward),
+    .right = rot_vec3d(rot, frame.right),
+    .up = rot_vec3d(rot, frame.up),
   };
 }
 

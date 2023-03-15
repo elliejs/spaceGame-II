@@ -52,10 +52,7 @@ void request_player(unsigned int id, off_t user_offset) {
 void request_player_save(unsigned int id, off_t user_index) {
   user_data_t user_data;
   MTX_LOCK(world_server->player_mtxs + id);
-    user_data = (user_data_t) {
-      .origin = world_server->players[id].origin,
-      .abs_coord = world_server->players[id].ship.abs_coord,
-    };
+    user_data = export_ship(world_server->players + id);
   MTX_UNLOCK(world_server->player_mtxs + id);
   update_user_data(user_index, &user_data);
 }

@@ -31,4 +31,7 @@ extern inline
 SGVec4D_t prepare_rot_quat(SGVec rots_sin, SGVec rots_cos, SGVec3D_t axis);
 
 extern inline
+SGFrame_t rot_frame(SGVec4D_t rot, SGFrame_t frame);
+
+extern inline
 SGVec4D_t SGVec4D_Invert(SGVec4D_t a);
