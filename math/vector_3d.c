@@ -25,13 +25,13 @@ extern inline
 SGVec3D_t SGVec3D_normalize(SGVec3D_t vec);
 
 extern inline
+SGVec4D_t SGVec4D_normalize(SGVec4D_t vec);
+
+extern inline
 SGVec4D_t SGVec4D_Mult_SGVec4D(SGVec4D_t a, SGVec4D_t b);
 
 extern inline
 SGVec4D_t prepare_rot_quat(SGVec rots_sin, SGVec rots_cos, SGVec3D_t axis);
-
-extern inline
-SGFrame_t rot_frame(SGVec4D_t rot, SGFrame_t frame);
 
 extern inline
 SGVec4D_t SGVec4D_Invert(SGVec4D_t a);

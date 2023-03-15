@@ -12,7 +12,7 @@ SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx) {
     .z = SGVec_Sub_SGVec(point.z, SGVec_Add_SGVec(self->origin.z, cube_offset.z))
   };
 
-  point = rot_vec3d(SGVec4D_Invert(self->ship.orientation), point);
+  point = rot_vec3d(SGVec4D_Invert(self->ship.attitude), point);
 
   point = (SGVec3D_t) {
     .x = SGVec_Absolute(point.x),
@@ -98,8 +98,8 @@ SGVecOKLAB_t color(object_t * self, SGVec3D_t point) {
   const oklab_t basis = linear_srgb_to_oklab((rgb_t) {0.0, 0.5, 0.0});
   return (SGVecOKLAB_t) {
     .l = SGVec_Load_Const(0.5),
-    .a = SGVec3D_dot(self->ship.frame.up, vector),
-    .b = SGVec3D_dot(self->ship.frame.forward, vector),
+    .a = SGVec3D_dot(rot_vec3d(self->ship.attitude, SGFrame_UP), vector),
+    .b = SGVec3D_dot(rot_vec3d(self->ship.attitude, SGFrame_FORWARD), vector),
   };
 }
 
@@ -110,11 +110,10 @@ object_t create_ship(SGVec3D_t origin, chunk_coord_t abs_coord) {
     .distance = distance,
     .color = color,
     .ship = (ship_t) {
-      .frame = SGFrame_IDENTITY,
       .la = SGVec_Load_Const(48.),
       .lb = SGVec_Load_Const(96.),
       .height = SGVec_Load_Const(5.),
-      .orientation = SGVec4D_IDENTITY,
+      .attitude = SGVec4D_IDENTITY,
       .vision = STANDARD,
       .abs_coord = abs_coord
     }
@@ -129,11 +128,10 @@ void load_ship(object_t * ship, user_data_t * user_data) {
     .color = color,
     .ship = (ship_t) {
       .abs_coord = user_data->abs_coord,
-      .frame = rot_frame(user_data->orientation, SGFrame_IDENTITY),
       .la = SGVec_Load_Const(24.),
       .lb = SGVec_Load_Const(12.),
       .height = SGVec_Load_Const(1.),
-      .orientation = user_data->orientation,
+      .attitude = user_data->attitude,
       .vision = STANDARD,
     }
   };
@@ -143,6 +141,6 @@ user_data_t export_ship(object_t * self) {
   return (user_data_t) {
     .origin = self->origin,
     .abs_coord = self->ship.abs_coord,
-    .orientation = self->ship.orientation,
+    .attitude = SGVec4D_normalize(self->ship.attitude),
   };
 }

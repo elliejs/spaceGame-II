@@ -9,8 +9,7 @@
 
 typedef
 struct ship_s {
-  SGFrame_t frame;
-  SGVec4D_t orientation;
+  SGVec4D_t attitude;
   SGVec height;
   SGVec la;
   SGVec lb;

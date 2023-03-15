@@ -299,7 +299,7 @@ off_t create_user(char const * username, char const * password) {
       .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
     },
     .abs_coord = (chunk_coord_t) {0,0,0},
-    .orientation = SGVec4D_IDENTITY,
+    .attitude = SGVec4D_IDENTITY,
   };
 
   update_user_data(user_data_offset, &user_data);

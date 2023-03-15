@@ -13,7 +13,7 @@ typedef
 struct user_data_s {
   SGVec3D_t origin;
   chunk_coord_t abs_coord;
-  SGVec4D_t orientation;
+  SGVec4D_t attitude;
 }
 user_data_t;
 

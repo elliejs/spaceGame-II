@@ -78,15 +78,20 @@ const struct timespec fps_ts = (struct timespec) {
 };
 
 static inline
-SGVec3D_t create_rays(SGFrame_t frame, SGVec rots_sin_x, SGVec rots_cos_x, SGVec rots_sin_y, SGVec rots_cos_y) {
-  SGVec4D_t rot_quat_y = prepare_rot_quat(rots_sin_y, rots_cos_y, frame.right);
-  SGVec4D_t rot_quat_x = prepare_rot_quat(rots_sin_x, rots_cos_x, frame.up);
-  return rot_vec3d(
-    rot_quat_y,
+SGVec3D_t create_rays(SGVec4D_t attitude, SGVec rots_sin_x, SGVec rots_cos_x, SGVec rots_sin_y, SGVec rots_cos_y) {
+  SGVec4D_t rot_quat_y = prepare_rot_quat(rots_sin_y, rots_cos_y, SGFrame_RIGHT);
+  SGVec4D_t rot_quat_x = prepare_rot_quat(rots_sin_x, rots_cos_x, SGFrame_UP);
+  return
+  rot_vec3d(
+    attitude,
     rot_vec3d(
-      rot_quat_x,
-      frame.forward
-    ));
+      rot_quat_y,
+      rot_vec3d(
+        rot_quat_x,
+        SGFrame_FORWARD
+      )
+    )
+  );
 }
 
 static
@@ -126,7 +131,7 @@ void * pixel_task(void * nothing) {
         break;
       }
 
-      SGVec3D_t rays = create_rays(render_client.snapshot.self->ship.frame, job->rot_x_sin, job->rot_x_cos, job->rot_y_sin, job->rot_y_cos);
+      SGVec3D_t rays = create_rays(render_client.snapshot.self->ship.attitude, job->rot_x_sin, job->rot_x_cos, job->rot_y_sin, job->rot_y_cos);
 
       raw_pixel_t raw_pixel = rays_to_pixel(rays, &(render_client.snapshot));
 

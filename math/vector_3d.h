@@ -17,14 +17,6 @@ struct SGVec3D_s {
 SGVec3D_t;
 
 typedef
-struct SGFrame_s {
-  SGVec3D_t forward;
-  SGVec3D_t right;
-  SGVec3D_t up;
-}
-SGFrame_t;
-
-typedef
 struct SGVec4D_s {
   SGVec x;
   SGVec y;
@@ -33,28 +25,14 @@ struct SGVec4D_s {
 }
 SGVec4D_t;
 
+#define SGVec3D_ZERO (SGVec3D_t)     {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO}
+
 #define SGVec4D_IDENTITY (SGVec4D_t) {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO, SGVec_ONE}
 
-#define SGFrame_IDENTITY \
-(SGFrame_t) { \
-  .up = (SGVec3D_t) { \
-    .x = SGVec_ZERO, \
-    .y = SGVec_ONE, \
-    .z = SGVec_ZERO \
-  }, \
-  .forward = (SGVec3D_t) { \
-    .x = SGVec_ZERO, \
-    .y = SGVec_ZERO, \
-    .z = SGVec_ONE, \
-  }, \
-  .right = (SGVec3D_t) { \
-    .x = SGVec_ONE, \
-    .y = SGVec_ZERO, \
-    .z = SGVec_ZERO \
-  } \
-}
+#define SGFrame_RIGHT (SGVec3D_t)    {SGVec_ONE, SGVec_ZERO, SGVec_ZERO}  // 1, 0, 0
+#define SGFrame_UP (SGVec3D_t)       {SGVec_ZERO, SGVec_ONE, SGVec_ZERO}  // 0, 1, 0
+#define SGFrame_FORWARD (SGVec3D_t)  {SGVec_ZERO, SGVec_ZERO, SGVec_ONE}  // 0, 0, 1
 
-#define SGVec3D_ZERO (SGVec3D_t) {SGVec_ZERO, SGVec_ZERO, SGVec_ZERO}
 
 inline
 SGVec3D_t SGVec3D_Add_SGVec3D(SGVec3D_t a, SGVec3D_t b) {
@@ -130,6 +108,40 @@ SGVec3D_t SGVec3D_normalize(SGVec3D_t vec) {
 }
 
 inline
+SGVec SGVec4D_dot(SGVec4D_t a, SGVec4D_t b) {
+  return
+  SGVec_Add_Mult_SGVec(
+    SGVec_Add_Mult_SGVec(
+      SGVec_Add_Mult_SGVec(
+        SGVec_Mult_SGVec(a.x, b.x),
+        a.y,
+        b.y
+      ),
+      a.z,
+      b.z
+    ),
+    a.w,
+    b.w
+  );
+}
+
+inline
+SGVec4D_t SGVec4D_normalize(SGVec4D_t vec) {
+  SGVec recip_magnitude =
+    SGVec_Recip_Sqrt(
+      SGVec4D_dot(vec, vec)
+    );
+    // printf("recip mag: %f %f %f %f\n", SGVec_Get_Lane(recip_magnitude, 0), SGVec_Get_Lane(recip_magnitude, 1), SGVec_Get_Lane(recip_magnitude, 2), SGVec_Get_Lane(recip_magnitude, 3));
+  return (SGVec4D_t) {
+    .x = SGVec_Mult_SGVec(vec.x, recip_magnitude),
+    .y = SGVec_Mult_SGVec(vec.y, recip_magnitude),
+    .z = SGVec_Mult_SGVec(vec.z, recip_magnitude),
+    .w = SGVec_Mult_SGVec(vec.w, recip_magnitude)
+  };
+}
+
+
+inline
 SGVec4D_t prepare_rot_quat(SGVec rots_sin, SGVec rots_cos, SGVec3D_t axis) {
   return (SGVec4D_t) {
     .x = SGVec_Mult_SGVec(axis.x, rots_sin),
@@ -152,46 +164,50 @@ SGVec4D_t SGVec4D_Invert(SGVec4D_t a) {
 inline
 SGVec4D_t SGVec4D_Mult_SGVec4D(SGVec4D_t a, SGVec4D_t b) {
   return (SGVec4D_t) {
-    .x = SGVec_Sub_SGVec(
-      SGVec_Sub_SGVec(
-        SGVec_Sub_SGVec(
-          SGVec_Mult_SGVec(a.w, b.x),
-          SGVec_Mult_SGVec(a.x, b.w)
-        ),
-        SGVec_Mult_SGVec(a.y, b.z)
-      ),
-      SGVec_Mult_SGVec(a.z, b.y)
-    ),
-    .y = SGVec_Add_SGVec(
+    .x =
       SGVec_Sub_SGVec(
         SGVec_Add_SGVec(
-          SGVec_Mult_SGVec(a.w, b.y),
-          SGVec_Mult_SGVec(a.x, b.z)
+          SGVec_Add_SGVec(
+            SGVec_Mult_SGVec(a.w, b.x),
+            SGVec_Mult_SGVec(a.x, b.w)
+          ),
+          SGVec_Mult_SGVec(a.y, b.z)
         ),
-        SGVec_Mult_SGVec(a.y, b.w)
+        SGVec_Mult_SGVec(a.z, b.y)
       ),
-      SGVec_Mult_SGVec(a.z, b.x)
-    ),
-    .z = SGVec_Add_SGVec(
-      SGVec_Add_SGVec(
-        SGVec_Sub_SGVec(
-          SGVec_Mult_SGVec(a.w, b.z),
-          SGVec_Mult_SGVec(a.x, b.y)
-        ),
-        SGVec_Mult_SGVec(a.y, b.x)
-      ),
-      SGVec_Mult_SGVec(a.z, b.w)
-    ),
-    .w = SGVec_Sub_SGVec(
+    .y =
       SGVec_Add_SGVec(
         SGVec_Add_SGVec(
-          SGVec_Mult_SGVec(a.w, b.w),
-          SGVec_Mult_SGVec(a.x, b.x)
+          SGVec_Sub_SGVec(
+            SGVec_Mult_SGVec(a.w, b.y),
+            SGVec_Mult_SGVec(a.x, b.z)
+          ),
+          SGVec_Mult_SGVec(a.y, b.w)
         ),
-        SGVec_Mult_SGVec(a.y, b.y)
+        SGVec_Mult_SGVec(a.z, b.x)
       ),
-      SGVec_Mult_SGVec(a.z, b.z)
-    )
+    .z =
+      SGVec_Add_SGVec(
+        SGVec_Sub_SGVec(
+          SGVec_Add_SGVec(
+            SGVec_Mult_SGVec(a.w, b.z),
+            SGVec_Mult_SGVec(a.x, b.y)
+          ),
+          SGVec_Mult_SGVec(a.y, b.x)
+        ),
+        SGVec_Mult_SGVec(a.z, b.w)
+      ),
+    .w =
+      SGVec_Sub_SGVec(
+        SGVec_Sub_SGVec(
+          SGVec_Sub_SGVec(
+            SGVec_Mult_SGVec(a.w, b.w),
+            SGVec_Mult_SGVec(a.x, b.x)
+          ),
+          SGVec_Mult_SGVec(a.y, b.y)
+        ),
+        SGVec_Mult_SGVec(a.z, b.z)
+      )
   };
 }
 
@@ -288,15 +304,6 @@ SGVec3D_t rot_vec3d(SGVec4D_t rot_quat, SGVec3D_t p) {
     .x = r_x,
     .y = r_y,
     .z = r_z
-  };
-}
-
-inline
-SGFrame_t rot_frame(SGVec4D_t rot, SGFrame_t frame) {
-  return (SGFrame_t) {
-    .forward = rot_vec3d(rot, frame.forward),
-    .right = rot_vec3d(rot, frame.right),
-    .up = rot_vec3d(rot, frame.up),
   };
 }
 
