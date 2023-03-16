@@ -81,17 +81,8 @@ static inline
 SGVec3D_t create_rays(SGVec4D_t attitude, SGVec rots_sin_x, SGVec rots_cos_x, SGVec rots_sin_y, SGVec rots_cos_y) {
   SGVec4D_t rot_quat_y = prepare_rot_quat(rots_sin_y, rots_cos_y, SGFrame_RIGHT);
   SGVec4D_t rot_quat_x = prepare_rot_quat(rots_sin_x, rots_cos_x, SGFrame_UP);
-  return
-  rot_vec3d(
-    attitude,
-    rot_vec3d(
-      rot_quat_y,
-      rot_vec3d(
-        rot_quat_x,
-        SGFrame_FORWARD
-      )
-    )
-  );
+  SGVec4D_t total_rot = SGVec4D_Mult_SGVec4D(attitude, SGVec4D_Mult_SGVec4D(rot_quat_x, rot_quat_y));
+  return rot_vec3d(total_rot, SGFrame_FORWARD);
 }
 
 static
