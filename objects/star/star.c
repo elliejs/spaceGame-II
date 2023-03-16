@@ -2,7 +2,7 @@
 #include "../../world/world_server.h"
 
 static
-SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx) {
+SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx, long long time) {
   // return SGVec_Load_Const(1000000000000.);
   SGVec3D_t cube_offset = get_cube_offset(cube_idx);
   return SGVec_Sub_SGVec(

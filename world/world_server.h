@@ -1,6 +1,8 @@
 #ifndef WORLD_SERVER_H
 #define WORLD_SERVER_H
 
+#include <sys/time.h>
+
 #include "../math/vector_3d.h"
 #include "../math/fast_list.h"
 #include "../utils/semaphore.h"
@@ -14,10 +16,9 @@ extern SGVec3D_t chunk_offsets[CUBE_NUM];
 
 #include "../objects/object.h"
 
-
 typedef
 struct world_snapshot_s {
-  // unsigned long time;
+  long long time;
   chunk_t * chunks[2 * CUBE_NUM];
   chunk_t ship_chunks[CUBE_NUM];
   object_t * self;
@@ -27,9 +28,6 @@ world_snapshot_t;
 
 typedef
 struct world_server_s {
-  // unsigned long time;
-  // pthread_mutex_t time_mtx;
-
   FAST_LIST_T(unsigned int, MAX_CLIENTS) active_ids;
   pthread_mutex_t active_ids_mtx;
 
@@ -56,6 +54,14 @@ extern SGVec3D_t cube_offsets[CUBE_NUM * 2];
 inline
 SGVec3D_t get_cube_offset(unsigned int cube_idx) {
   return cube_offsets[cube_idx];
+}
+
+inline
+long long time_millis(void) {
+    struct timeval tv;
+
+    gettimeofday(&tv,NULL);
+    return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
 }
 
 #endif /* end of include guard: WORLD_SERVER_H */

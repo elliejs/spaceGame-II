@@ -14,8 +14,9 @@ typedef struct object_s object_t;
 #include "../math/vector_3d.h"
 #include "../color/oklab.h"
 
+
 struct object_s {
-  SGVec (*distance)(struct object_s *, SGVec3D_t, unsigned int cube_idx);
+  SGVec (*distance)(struct object_s *, SGVec3D_t, unsigned int cube_idx, long long time);
   SGVecOKLAB_t (*color)(struct object_s *, SGVec3D_t);
   SGVec3D_t origin;
   SGVec radius;
@@ -26,6 +27,7 @@ struct object_s {
     star_t star;
   };
 };
+
 
 // inline
 // SGVec SGVec_smooth_min(SGVec a, SGVec b, float k) {
@@ -39,6 +41,8 @@ struct object_s {
 //   return SGVec_Add_SGVec(SGVec_Maximum(a, b), SGVec_Mult_Float(SGVec_Mult_Float(SGVec_Mult_SGVec(SGVec_Mult_SGVec(h,h),h),k),1.0/6.0));
 // }
 
-SGVec3D_t surface_normal(object_t * self, SGVec3D_t point, unsigned int cube_idx);
+SGVec3D_t surface_normal(object_t * self, SGVec3D_t point, unsigned int cube_idx, long long time);
+
+SGVec3D_t localize_point(SGVec3D_t point, SGVec3D_t origin, SGVec3D_t cube_offset);
 
 #endif /* end of include guard: OBJECT_H */

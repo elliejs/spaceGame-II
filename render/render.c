@@ -58,7 +58,7 @@ march_result_t ray_march(SGVec3D_t origin, SGVec3D_t rays, world_snapshot_t * sn
           skipped++;
           continue;
         }
-        SGVec dist_candidate = o->distance(o, point, c);
+        SGVec dist_candidate = o->distance(o, point, c, snapshot->time);
         dist_step = SGVec_Minimum(dist_candidate, dist_step);
         SGVecUInt dist_ternary = SGVec_Less_Or_Eq_Than(dist_candidate, dist_step);
         obj_idx = SGVecUInt_Ternary(dist_ternary, SGVecUInt_Load_Const(j), obj_idx);
@@ -186,12 +186,12 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
 
   SGVecOKLAB_t colors;
   SGVec3D_t normals;
-
+  time_t time = snapshot->time;
   /// EWWWWWWWWWWWWWWWW
   if (validity[0]) {
     object_t * o = snapshot->chunks[chunk_idx[0]]->objects + obj_idx[0];
     SGVecOKLAB_t obj_color = o->color(o, march_result.point);
-    SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[0]);
+    SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[0], time);
 
     steal_lane(colors.l, obj_color.l, 0);
     steal_lane(colors.a, obj_color.a, 0);
@@ -204,7 +204,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   if (validity[1]) {
     object_t * o = snapshot->chunks[chunk_idx[1]]->objects + obj_idx[1];
     SGVecOKLAB_t obj_color = o->color(o, march_result.point);
-    SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[1]);
+    SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[1], time);
 
     steal_lane(colors.l, obj_color.l, 1);
     steal_lane(colors.a, obj_color.a, 1);
@@ -217,7 +217,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   if (validity[2]) {
     object_t * o = snapshot->chunks[chunk_idx[2]]->objects + obj_idx[2];
     SGVecOKLAB_t obj_color = o->color(o, march_result.point);
-    SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[2]);
+    SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[2], time);
 
     steal_lane(colors.l, obj_color.l, 2);
     steal_lane(colors.a, obj_color.a, 2);
@@ -230,7 +230,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   if (validity[3]) {
     object_t * o = snapshot->chunks[chunk_idx[3]]->objects + obj_idx[3];
     SGVecOKLAB_t obj_color = o->color(o, march_result.point);
-    SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[3]);
+    SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[3], time);
 
     steal_lane(colors.l, obj_color.l, 3);
     steal_lane(colors.a, obj_color.a, 3);
@@ -275,7 +275,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
       //we have some rays to bother with!
 
 
-      SGVec dists = light->distance(light, march_result.point, c);
+      SGVec dists = light->distance(light, march_result.point, c, time);
       // printf("trying to go to light\n");
       march_result_t light_march = ray_march(march_result.point, ray_to_light, snapshot, NULL);
       // printf("dists: %f %f %f %f\nmarch_dists: %f %f %f %f\n", SGVec_Get_Lane(dists, 0), SGVec_Get_Lane(dists, 1), SGVec_Get_Lane(dists, 2), SGVec_Get_Lane(dists, 3), SGVec_Get_Lane(light_march.dists, 0), SGVec_Get_Lane(light_march.dists, 1), SGVec_Get_Lane(light_march.dists, 2), SGVec_Get_Lane(light_march.dists, 3));

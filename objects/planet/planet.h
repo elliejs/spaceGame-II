@@ -13,6 +13,8 @@ struct planet_s {
   SGVec noise_amplitude;
   SGVecOKLAB_t basis;
   SGVec3D_t pos_hash;
+  SGVec3D_t spin_axis;
+  unsigned int revolve_period;
 }
 planet_t;
 

@@ -11,6 +11,9 @@ SGVec3D_t cube_offsets[CUBE_NUM * 2];
 extern inline
 SGVec3D_t get_cube_offset(unsigned int cube_idx);
 
+extern inline
+long long time_millis(void);
+
 void start_world_server() {
   if (world_server != NULL) {
     printf("[world_server]: Already instantiated, not double-mallocing\n");
@@ -130,4 +133,5 @@ void request_snapshot(world_snapshot_t * snapshot, unsigned int id) {
   MTX_UNLOCK(&(world_server->active_ids_mtx));
 
   gather_chunks(snapshot->chunks, self_abs_coord);
+  snapshot->time = time_millis();
 }

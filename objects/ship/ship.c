@@ -3,14 +3,10 @@
 #include "../../world/world_server.h"
 
 static
-SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx) {
+SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx, long long time) {
   SGVec3D_t cube_offset = get_cube_offset(cube_idx);
 
-  point = (SGVec3D_t) {
-    .x = SGVec_Sub_SGVec(point.x, SGVec_Add_SGVec(self->origin.x, cube_offset.x)),
-    .y = SGVec_Sub_SGVec(point.y, SGVec_Add_SGVec(self->origin.y, cube_offset.y)),
-    .z = SGVec_Sub_SGVec(point.z, SGVec_Add_SGVec(self->origin.z, cube_offset.z))
-  };
+  point = localize_point(point, self->origin, cube_offset);
 
   point = rot_vec3d(SGVec4D_Invert(self->ship.attitude), point);
 
