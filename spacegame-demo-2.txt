@@ -1,0 +1,30 @@
+SPACEGAME II --- DEMO --- 2023-03-17
+
+NEW FEATURES:
+- Improved celestial body spawn randomization
+- Stellar twinkling
+- Planetary rotation
+- Vastly improved rotation engine
+	- Player models now accurately reflect their attitude when rendered
+- Cold storage player save data database
+	- on player exit, absolute universal position, attitude, and relative position within chunk are saved
+	- on player load, aforementioned data are reapplied to the user's ship
+	- new players (determined by ssh username) apply any password at first login. This login must be used with the username from there on
+		- usernames are Primary Keys. No collision allowed
+		- existing usernames will fail to authenticate without the right password (since they store data)
+		
+As before, the only external dependency is libssh.
+
+Cold Storage Database is implemented with 2 files. An index implemented as an aa-tree (self balancing 2-3 tree relative), and offset pointers into a backing data file. Backing data file is unordered. Server-side database administration is not yet suppported. Database files are created if they do not exist, or loaded on server start from the relative path ./users/*.database [* ==> user_index, user_data]
+
+expensive trigonometric functions sinf, cosf, tanf, are sparingly used. Normalization is also sparingly used. Much prefered are algebraic constructions leading to exceptional speedups. This allows a raymarched, live updated, and complex game to continue to run on old hardware. Up to 5 connected clients have been tested at once on modernish (2017) hardware.
+
+Local chunks are generated on the fly when needed and memoized in an all-client accessible cache. The size of the toroidal universe is 2^10 * 2^64 = 2^74 units. Compared to the actual observable universe, 1 spacegame unit is roughly equal to 50,000 meters. Cool!
+
+Summary of demo:
+- ssh (upper right) into server under the name juno. fly around. (password toast)
+- ssh (lower left) into server under the name juno2. view juno's spaceship moving around in real time (juno2's view moves along with the ship attitude on juno's screen)
+- logout of spacegame under juno 
+- fail login with wrong password (password bread)
+- login juno (password toast)
+- confirm that ship retains coordinate and attitude!
