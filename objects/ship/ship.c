@@ -89,7 +89,7 @@ SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx, long lon
 }
 
 static
-SGVecOKLAB_t color(object_t * self, SGVec3D_t point) {
+SGVecOKLAB_t color(object_t * self, SGVec3D_t point, long long time) {
   SGVec3D_t vector = SGVec3D_normalize(SGVec3D_Sub_SGVec3D(point, self->origin));
   const oklab_t basis = linear_srgb_to_oklab((rgb_t) {0.0, 0.5, 0.0});
   return (SGVecOKLAB_t) {

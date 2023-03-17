@@ -190,7 +190,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   /// EWWWWWWWWWWWWWWWW
   if (validity[0]) {
     object_t * o = snapshot->chunks[chunk_idx[0]]->objects + obj_idx[0];
-    SGVecOKLAB_t obj_color = o->color(o, march_result.point);
+    SGVecOKLAB_t obj_color = o->color(o, march_result.point, time);
     SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[0], time);
 
     steal_lane(colors.l, obj_color.l, 0);
@@ -203,7 +203,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   }
   if (validity[1]) {
     object_t * o = snapshot->chunks[chunk_idx[1]]->objects + obj_idx[1];
-    SGVecOKLAB_t obj_color = o->color(o, march_result.point);
+    SGVecOKLAB_t obj_color = o->color(o, march_result.point, time);
     SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[1], time);
 
     steal_lane(colors.l, obj_color.l, 1);
@@ -216,7 +216,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   }
   if (validity[2]) {
     object_t * o = snapshot->chunks[chunk_idx[2]]->objects + obj_idx[2];
-    SGVecOKLAB_t obj_color = o->color(o, march_result.point);
+    SGVecOKLAB_t obj_color = o->color(o, march_result.point, time);
     SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[2], time);
 
     steal_lane(colors.l, obj_color.l, 2);
@@ -229,7 +229,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
   }
   if (validity[3]) {
     object_t * o = snapshot->chunks[chunk_idx[3]]->objects + obj_idx[3];
-    SGVecOKLAB_t obj_color = o->color(o, march_result.point);
+    SGVecOKLAB_t obj_color = o->color(o, march_result.point, time);
     SGVec3D_t obj_normal = surface_normal(o, march_result.point, chunk_idx[3], time);
 
     steal_lane(colors.l, obj_color.l, 3);
@@ -295,7 +295,7 @@ raw_pixel_t rays_to_pixel(SGVec3D_t rays, world_snapshot_t * snapshot) {
       // printf("have unobstructed rays\n");
       // printf("unobstructed_rays: %x %x %x %x\n\n", SGVecUInt_Get_Lane(unobstructed_rays, 0), SGVecUInt_Get_Lane(unobstructed_rays, 1), SGVecUInt_Get_Lane(unobstructed_rays, 2), SGVecUInt_Get_Lane(unobstructed_rays, 3));
 
-      SGVecOKLAB_t star_color = light->star.radiance(&(light->star), dists);
+      SGVecOKLAB_t star_color = light->star.radiance(&(light->star), dists, time);
       SGVec sub_pixel_luminence = SGVec_Ternary(unobstructed_rays, alignment, SGVec_ZERO);
       // SGVec sub_pixel_luminence = SGVec_Maximum(alignment, SGVec_ZERO);
       colors = (SGVecOKLAB_t) {

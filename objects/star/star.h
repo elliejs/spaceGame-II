@@ -7,7 +7,8 @@
 
 typedef
 struct star_s {
-  SGVecOKLAB_t (*radiance)(struct star_s *, SGVec distance);
+  SGVecOKLAB_t (*radiance)(struct star_s *, SGVec distance, long long time);
+  unsigned int radiance_period;
 }
 star_t;
 

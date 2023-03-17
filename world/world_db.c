@@ -1,5 +1,13 @@
 #include "world_server.h"
 
+float rand_between(int min, int max) {
+  int r = rand();
+  r %= max - min;
+  r += min;
+  return r;
+}
+
+
 void promote(cache_item_t * item) {
   //first stitch together around item's current location
   if (item->prev) item->prev->next = item->next;
@@ -21,33 +29,32 @@ void generate_chunk(chunk_coord_t abs_coord, chunk_t * chunk) {
   chunk->num_lights = 1;
   unsigned int enc_chunk_id = encode_chunk_coord(abs_coord);
   srand(enc_chunk_id);
-  oklab_t planet_color = linear_srgb_to_oklab((rgb_t) {((rand() % 100) / 100.), ((rand() % 100) / 100.), ((rand() % 100) / 100.)});
   chunk->objects[0] = create_planet(
     (SGVec3D_t) {
-      .x = SGVec_Load_Const(CHUNK_SIZE / 2.),
-      .y = SGVec_Load_Const(CHUNK_SIZE / 2.),
-      .z = SGVec_Load_Const(CHUNK_SIZE / 2.)
+      .x = SGVec_Load_Const(rand_between(0, CHUNK_SIZE)),
+      .y = SGVec_Load_Const(rand_between(0, CHUNK_SIZE)),
+      .z = SGVec_Load_Const(rand_between(0, CHUNK_SIZE))
     },
-    SGVec_Load_Const(50.),
-    SGVec_Load_Const(20.),
+    SGVec_Load_Const(rand_between(10, 100)),
+    SGVec_Load_Const(rand_between(5, 15)),
     (SGVecOKLAB_t) {
       .l = SGVec_Load_Const(0.2),
-      .a = SGVec_Load_Const(planet_color.a),
-      .b = SGVec_Load_Const(planet_color.b)
+      .a = SGVec_Load_Const(rand_between(1, 50) / 50. - 0.5),
+      .b = SGVec_Load_Const(rand_between(1, 50) / 50. - 0.5)
     },
     (SGVec3D_t) {
-      .x = SGVec_Load_Const(rand() % NOISE_DOMAIN_SIZE),
-      .y = SGVec_Load_Const(rand() % NOISE_DOMAIN_SIZE),
-      .z = SGVec_Load_Const(rand() % NOISE_DOMAIN_SIZE)
+      .x = SGVec_Load_Const(rand_between(0, NOISE_DOMAIN_SIZE)),
+      .y = SGVec_Load_Const(rand_between(0, NOISE_DOMAIN_SIZE)),
+      .z = SGVec_Load_Const(rand_between(0, NOISE_DOMAIN_SIZE)),
     }
   );
   chunk->objects[1] = create_star(
     (SGVec3D_t) {
-      .x = SGVec_Load_Const(CHUNK_SIZE * 0.75),
-      .y = SGVec_Load_Const(CHUNK_SIZE * 0.75),
-      .z = SGVec_Load_Const(CHUNK_SIZE * 0.75)
+      .x = SGVec_Load_Const(rand_between(0, CHUNK_SIZE)),
+      .y = SGVec_Load_Const(rand_between(0, CHUNK_SIZE)),
+      .z = SGVec_Load_Const(rand_between(0, CHUNK_SIZE))
     },
-    SGVec_Load_Const(50.)
+    SGVec_Load_Const(rand_between(10, 50))
   );
 
   chunk->lights[0] = chunk->objects + 1;

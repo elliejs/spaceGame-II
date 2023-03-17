@@ -42,7 +42,7 @@ SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx, long lon
 }
 
 static
-SGVecOKLAB_t color(object_t * self, SGVec3D_t point) {
+SGVecOKLAB_t color(object_t * self, SGVec3D_t point, long long time) {
   return self->planet.basis;
 }
 

@@ -17,7 +17,7 @@ typedef struct object_s object_t;
 
 struct object_s {
   SGVec (*distance)(struct object_s *, SGVec3D_t, unsigned int cube_idx, long long time);
-  SGVecOKLAB_t (*color)(struct object_s *, SGVec3D_t);
+  SGVecOKLAB_t (*color)(struct object_s *, SGVec3D_t, long long time);
   SGVec3D_t origin;
   SGVec radius;
 

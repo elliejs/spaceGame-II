@@ -18,18 +18,21 @@ SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx, long lon
 }
 
 static
-SGVecOKLAB_t color(object_t * self, SGVec3D_t point) {
+SGVecOKLAB_t color(object_t * self, SGVec3D_t point, long long time) {
+  float radiance_percent = (time % self->star.radiance_period) / (float) self->star.radiance_period;
+  if (radiance_percent > 0.5) radiance_percent = 1.0 - radiance_percent;
   return (SGVecOKLAB_t) {
-    .l = SGVec_Load_Const(1.),
+    .l = SGVec_Load_Const(radiance_percent + 0.5),
     .a = SGVec_Load_Const(0.),
     .b = SGVec_Load_Const(0.)
   };
 }
 
-SGVecOKLAB_t radiance(star_t * self, SGVec dists) {
+SGVecOKLAB_t radiance(star_t * self, SGVec dists, long long time) {
+  float radiance_percent = (time % self->radiance_period) / (float) self->radiance_period;
+  if (radiance_percent > 0.5) radiance_percent = 1.0 - radiance_percent;
   return (SGVecOKLAB_t) {
-    // .l = SGVec_Load_Const(0.4),
-    .l = SGVec_Mult_SGVec(SGVec_Load_Const(50.), SGVec_Reciprocal(dists)),
+    .l = SGVec_Mult_SGVec(SGVec_Load_Const(10. * radiance_percent + 50.), SGVec_Reciprocal(dists)),
     .a = SGVec_Load_Const(0.),
     .b = SGVec_Load_Const(0.)
   };
@@ -42,7 +45,8 @@ object_t create_star(SGVec3D_t origin, SGVec radius) {
     .distance = distance,
     .color = color,
     .star = (star_t) {
-      .radiance = radiance
+      .radiance = radiance,
+      .radiance_period = 1000,
     }
   };
 }

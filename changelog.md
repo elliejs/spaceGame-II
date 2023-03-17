@@ -8,14 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - User keymaps for Colemak, Dvorak, etc
 - Friend sharing and waypointing
-- Better planet gen
-    - More planets, revolution, rotation, and orbital stellar systems
+- Orbital stellar systems
 
 ## [Bugs]
 - User session can hang in specific conditions
-    - User can still play, move, and keep up to date, but cannot log out by conventional means. Client zombifies on server when force closed by the client
-- If more than one user is used in the database, data is mangled
-    - Causes black screens and dead controls
+    - User can still play, move, and keep up to date, but cannot log out by conventional means. Client zombifies on server when force closed by the client.
+        - Conditions identified: same user logs in on two separate terminals, causes inability to logout.
 
 ## [0.1.0] - 2023-03-15
 
