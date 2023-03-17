@@ -9,11 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User keymaps for Colemak, Dvorak, etc
 - Friend sharing and waypointing
 - Orbital stellar systems
+- Speedup on revolution and orbit calculations. Current implementation uses heavy use of sinf and cosf
+- Twinkle randomizing period base (so the whole universe doesn't pulse as one)
+    - Same for revolution period on planets
 
 ## [Bugs]
 - User session can hang in specific conditions
-    - User can still play, move, and keep up to date, but cannot log out by conventional means. Client zombifies on server when force closed by the client.
-        - Conditions identified: same user logs in on two separate terminals, causes inability to logout.
+    - User can still play, move, and keep up to date, but cannot log out by conventional means. Client zombifies on server when force closed by the client
+        - Conditions identified: same user logs in on two separate terminals, causes inability to logout
+
+## [0.1.1] - 2023-03-17
+
+### Added
+- Stars now twinkle, changing their radiance and color
+- Planets now generate randomly throughout space
+    - Planets now spin around an axis of revolution
+
+### Changed
+    - Major overhaul of how rays are created for marching. Much faster implementation using multiplication instead of repeated calls to trigonometric functions
 
 ## [0.1.0] - 2023-03-15
 
