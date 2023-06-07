@@ -25,6 +25,9 @@ extern inline
 SGVec3D_t SGVec3D_normalize(SGVec3D_t vec);
 
 extern inline
+SGVec SGVec4D_dot(SGVec4D_t a, SGVec4D_t b);
+
+extern inline
 SGVec4D_t SGVec4D_normalize(SGVec4D_t vec);
 
 extern inline

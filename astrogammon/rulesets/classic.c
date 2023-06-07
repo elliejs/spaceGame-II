@@ -67,7 +67,6 @@ bool wild_flush(unsigned int select_num, unsigned int * occurrence_table, unsign
 
 ruleset_t create_ruleset_classic() {
   return (ruleset_t) {
-    .pattern_num = 10,
     .buy_num = 1,
     .deal_num = 2,
     .river_add_num = 2,
@@ -80,6 +79,7 @@ ruleset_t create_ruleset_classic() {
     .sign_num = 2,
     .buy_in_purse = 500,
     .end_points = 500,
+    .pattern_num = 10,
     .pattern_ranking = {
       wild_flush,
       wild_house,

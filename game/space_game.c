@@ -12,5 +12,6 @@ int main(int argc, char const * argv[]) {
   start_world_server();
 //   start_astrogammon_server();
   ssh_daemon(argc == 2 ? argv[1] : NULL);
+  printf("Server Shutting Down\n");
   return EXIT_FAILURE;
 }
