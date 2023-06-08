@@ -10,7 +10,7 @@ int main(int argc, char const * argv[]) {
   setlocale(LC_ALL, "");
   start_user_db();
   start_world_server();
-//   start_astrogammon_server();
+  start_astrogammon_server();
   ssh_daemon(argc == 2 ? argv[1] : NULL);
   printf("Server Shutting Down\n");
   return EXIT_FAILURE;

@@ -8,7 +8,7 @@ struct asset_s {
   unsigned int offset_x;
   unsigned int offset_y;
 
-  char * data;
+  char ** data;
 }
 asset_t;
 
@@ -35,7 +35,8 @@ asset_aggregate_t;
 #define EDGE_HORZ       (unsigned char) 0x80
 #define EDGE_LEN 3
 
-void draw_sprite_at(char * buffer, unsigned int msg_idx, unsigned int offset_x, unsigned int offset_y, asset_t * asset);
-void draw_aggregate_sprite_at(char * buffer, unsigned int msg_idx, unsigned int offset_x, unsigned int offset_y, asset_aggregate_t * asset);
+unsigned int draw_asset(char * buffer, unsigned int msg_idx, unsigned int offset_x, unsigned int offset_y, asset_t * asset);
+unsigned int draw_aggregate_asset(char * buffer, unsigned int msg_idx, unsigned int offset_x, unsigned int offset_y, asset_aggregate_t * asset);
+unsigned int draw_card(char * buffer, unsigned int msg_idx, unsigned int offset_x, unsigned int offset_y);
 
 #endif /* end of include guard: ASSET_H */

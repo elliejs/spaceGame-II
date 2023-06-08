@@ -5,6 +5,7 @@
 
 #include "astrogammon_server.h"
 #include "gui.h"
+#include "assets/card_sprites.h"
 
 astrogammon_server_t * astrogammon_server = NULL;
 
@@ -12,7 +13,43 @@ void start_astrogammon_server() {
   astrogammon_server = (astrogammon_server_t *) mmap(NULL, sizeof(astrogammon_server_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
   astrogammon_server->active_games.num = 0;
   MTX_INIT(&(astrogammon_server->active_game_mtx));
+  COND_INIT(&(astrogammon_server->server_cond));
+  init_all_card_sprites();
 }
+
+void notify_all_clients(game_t * game) {
+  printf("notify_all_clients\n");
+  for (unsigned int i = 0; i < game->num_players; i++) {
+    player_t * player = game->players[i];
+    MTX_LOCK(&(player->player_mtx));
+    printf("notify_all_clients took_action :== true\n");
+    player->took_action = true;
+    COND_SIGNAL(&(player->player_cond));
+    MTX_UNLOCK(&(player->player_mtx));
+  }
+  printf("notify_all_clients DONE\n");
+}
+
+void notify_one_client(player_t * player) {
+  MTX_LOCK(&(player->player_mtx));
+  printf("notify_one_client took_action :== true\n");
+  player->took_action = true;
+  COND_SIGNAL(&(player->player_cond));
+  MTX_UNLOCK(&(player->player_mtx));
+}
+
+void notify_except_one(game_t * game, player_t * ignored_player) {
+  for (unsigned int i = 0; i < game->num_players; i++) {
+    player_t * player = game->players[i];
+    if (player == ignored_player) continue;
+    MTX_LOCK(&(player->player_mtx));
+    printf("notify_except_one took_action :== true\n");
+    player->took_action = true;
+    COND_SIGNAL(&(player->player_cond));
+    MTX_UNLOCK(&(player->player_mtx));
+  }
+}
+
 
 game_t * find_game(char * game_id) {
   game_t * game = NULL;
@@ -118,7 +155,6 @@ char * create_game(ruleset_t ruleset) {
     game->players[i]->selection.data = (card_t **) member_alloc_idx;
     member_alloc_idx += sizeof(card_t *) * (max_hand_num + river_total_num);
   }
-
   create_deck(game);
   MTX_LOCK(&(astrogammon_server->active_game_mtx));
   PUSH_FAST_LIST(astrogammon_server->active_games, game);
@@ -206,15 +242,18 @@ void score_selection(game_t * game, player_t * player) {
 //distribute trick pot
 //pass deal to left
 
+void deal_player(game_t * game, player_t * player, unsigned int deal_iter) {
+  if (player->game_valid)
+    player->hand[deal_iter] = game->deck + game->deck_idx++;
+}
+
 void deal(game_t * game) {
   for (unsigned int j = 0; j < game->ruleset.deal_num; j++) {
     for (unsigned int i = game->dealer + 1; i < game->num_players; i++) {
-      if (!game->players[i]->game_valid) continue;
-      game->players[i]->hand[j] = game->deck + game->deck_idx++;
+      deal_player(game, game->players[i], j);
     }
     for (unsigned int i = 0; i < game->dealer + 1; i++) {
-      if (!game->players[i]->game_valid) continue;
-      game->players[i]->hand[j] = game->deck + game->deck_idx++;
+      deal_player(game, game->players[i], j);
     }
   }
   for (unsigned int i = 0; i < game->ruleset.river_open_num + 1; i++) {
@@ -222,99 +261,75 @@ void deal(game_t * game) {
   }
 }
 
-void ante(game_t * game) {
-  for (unsigned int i = game->dealer + 1; i < game->num_players; i++) {
-    player_t * player = game->players[i];
+void ante_player(game_t * game, player_t * player) {
+  printf("ante_player\n");
+  MTX_LOCK(&(player->player_mtx));
+  printf("ante_player took_action :== false\n");
+  player->took_action = false;
+  if (player->game_valid) {
+    while (!player->took_action)
+      COND_WAIT(&(astrogammon_server->server_cond), &(player->player_mtx));
 
-    MTX_LOCK(&(player->player_mtx));
-    player->took_action = false;
-    if (player->game_valid) {
-      while (!player->took_action)
-        COND_WAIT(&(player->player_cond), &(player->player_mtx));
-      player->took_action = false;
-      if (player->game_valid && player->purse >= game->little_ante) {
-        game->game_pot += game->little_ante;
-        player->purse -= game->little_ante;
-      } else {
-        player->game_valid = false;
-      }
+    if (player->game_valid && player->purse >= game->little_ante) {
+      game->game_pot += game->little_ante;
+      player->purse -= game->little_ante;
+    } else {
+      player->game_valid = false;
     }
-    MTX_UNLOCK(&(player->player_mtx));
+
+    COND_SIGNAL(&(player->player_cond));
+    printf("launch reaction\n");
+  }
+  MTX_UNLOCK(&(player->player_mtx));
+}
+
+void ante(game_t * game) {
+  printf("ante\n");
+  for (unsigned int i = game->dealer + 1; i < game->num_players; i++) {
+    ante_player(game, game->players[i]);
   }
   for (unsigned int i = 0; i < game->dealer + 1; i++) {
-    player_t * player = game->players[i];
-
-    MTX_LOCK(&(player->player_mtx));
-    player->took_action = false;
-    if (player->game_valid) {
-      while (!player->took_action)
-        COND_WAIT(&(player->player_cond), &(player->player_mtx));
-      player->took_action = false;
-      if (player->game_valid && player->purse >= game->little_ante) {
-        game->game_pot += game->little_ante;
-        player->purse -= game->little_ante;
-      } else {
-        player->game_valid = false;
-      }
-    }
-    MTX_UNLOCK(&(player->player_mtx));
+    ante_player(game, game->players[i]);
   }
+}
+
+bool bid_player(game_t * game, player_t * player, player_t ** winner) {
+      if (player == *winner) {
+        return true;
+      }
+      MTX_LOCK(&(player->player_mtx));
+      printf("bid_player 1 took_action :== false\n");
+      player->took_action = false;
+      if (player->game_valid && player->trick_valid) {
+        while (!player->took_action)
+          COND_WAIT(&(astrogammon_server->server_cond), &(player->player_mtx));
+        if (player->trick_valid && player->purse >= player->bet && player->bet > game->current_bid) {
+          game->trick_pot += player->bet;
+          player->purse -= player->bet;
+          game->hand_sign = player->requested_sign;
+          *winner = player;
+        } else {
+          player->trick_valid = false;
+        }
+        printf("bid_player 2 took_action :== true\n");
+        player->took_action = true;
+        COND_SIGNAL(&(player->player_cond));
+      }
+      MTX_UNLOCK(&(player->player_mtx));
+      return false;
 }
 
 void bid(game_t * game) {
   player_t * winner = NULL;
-  bool breakbreak = false;
   game->current_bid = game->big_ante;
 
-  while (1) {
+  for (;;) {
     for (unsigned int i = game->dealer + 1; i < game->num_players; i++) {
-      player_t * player = game->players[i];
-      if (player == winner) {
-        breakbreak = true;
-        break;
-      }
-      MTX_LOCK(&(player->player_mtx));
-      player->took_action = false;
-      if (player->game_valid && player->trick_valid) {
-        while (!player->took_action)
-          COND_WAIT(&(player->player_cond), &(player->player_mtx));
-        player->took_action = false;
-        if (player->trick_valid && player->purse >= player->bet && player->bet > game->current_bid) {
-          game->trick_pot += player->bet;
-          player->purse -= player->bet;
-          game->hand_sign = player->requested_sign;
-          winner = player;
-        } else {
-          player->trick_valid = false;
-        }
-      }
-      MTX_UNLOCK(&(player->player_mtx));
+      if (bid_player(game, game->players[i], &winner)) return;
     }
-    if (breakbreak) break;
     for (unsigned int i = 0; i < game->dealer + 1; i++) {
-      player_t * player = game->players[i];
-      if (player == winner) {
-        breakbreak = true;
-        break;
-      }
-      MTX_LOCK(&(player->player_mtx));
-      player->took_action = false;
-      if (player->game_valid && player->trick_valid) {
-        while (!player->took_action)
-          COND_WAIT(&(player->player_cond), &(player->player_mtx));
-        player->took_action = false;
-        if (player->trick_valid && player->purse >= player->bet && player->bet > game->current_bid) {
-          game->trick_pot += player->bet;
-          player->purse -= player->bet;
-          game->hand_sign = player->requested_sign;
-          winner = player;
-        } else {
-          player->trick_valid = false;
-        }
-      }
-      MTX_UNLOCK(&(player->player_mtx));
+      if (bid_player(game, game->players[i], &winner)) return;
     }
-    if (breakbreak) break;
   }
 }
 
@@ -331,22 +346,24 @@ void finish_river(game_t * game) {
   }
 }
 
-void score_selections(game_t * game) {
-  for (unsigned int i = 0; i < game->num_players; i++) {
-    player_t * player = game->players[i];
+void score_player(game_t * game, player_t * player) {
     MTX_LOCK(&(player->player_mtx));
+    printf("score_player took_action :== false\n");
     player->took_action = false;
-    MTX_UNLOCK(&(player->player_mtx));
-  }
-  for (unsigned int i = 0; i < game->num_players; i++) {
-    player_t * player = game->players[i];
-    MTX_LOCK(&(player->player_mtx));
     if (player->game_valid && player->trick_valid) {
       while (!player->took_action)
         COND_WAIT(&(player->player_cond), &(player->player_mtx));
       score_selection(game, player);
     }
     MTX_UNLOCK(&(player->player_mtx));
+}
+
+void score_selections(game_t * game) {
+  for (unsigned int i = 0; i < game->num_players; i++) {
+    score_player(game, game->players[i]);
+  }
+  for (unsigned int i = 0; i < game->num_players; i++) {
+    score_player(game, game->players[i]);
   }
 }
 
@@ -409,38 +426,40 @@ void * gameflow(void * data) {
   MTX_UNLOCK(&(game->game_mtx));
   MTX_LOCK(&(game->players[0]->player_mtx));
   while (!game->players[0]->took_action)
-    COND_WAIT(&(game->players[0]->player_cond), &(game->players[0]->player_mtx));
+    COND_WAIT(&(astrogammon_server->server_cond), &(game->players[0]->player_mtx));
   MTX_UNLOCK(&(game->players[0]->player_mtx));
   while (1) {
     shuffle(game, 256);
     MTX_LOCK(&(game->game_mtx));
     game->phase = ANTE;
-    display_command_tray(game->phase);
     printf("ANTE PHASE\n");
     MTX_UNLOCK(&(game->game_mtx));
+    notify_all_clients(game);
     ante(game);
+    sleep(3);
     deal(game);
     MTX_LOCK(&(game->game_mtx));
     game->phase = BID;
-    display_command_tray(game->phase);
     printf("BID PHASE\n");
     MTX_UNLOCK(&(game->game_mtx));
+    notify_all_clients(game);
     bid(game);
     MTX_LOCK(&(game->game_mtx));
     game->phase = BUY;
-    // display_command_tray(game->phase);
     printf("BUY PHASE\n");
     MTX_UNLOCK(&(game->game_mtx));
+    notify_all_clients(game);
     buy(game);
     finish_river(game);
+    notify_all_clients(game);
     MTX_LOCK(&(game->game_mtx));
     game->phase = SELECT;
-    display_command_tray(game->phase);
     printf("SELECT PHASE\n");
     MTX_UNLOCK(&(game->game_mtx));
+    notify_all_clients(game);
     score_selections(game);
-
     score_trick(game);
+    notify_all_clients(game);
     if (score_game(game)) break;
 
     unsigned int biggest_ante = game->big_ante + game->little_ante;

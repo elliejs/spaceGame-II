@@ -1,15 +1,55 @@
 #include "../ssh/ssh_client.h"
 #include "astrogammon_server.h"
 #include <stdlib.h>
+#include "gui.h"
 
 static
 struct {
   game_t * game;
   player_t * player;
-
-  ssh_channel channel;
+  pthread_t pid;
 }
 astrogammon_client;
+
+void * astrogammon_client_task(void * nothing) {
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+  for (;;) {
+    MTX_LOCK(&(astrogammon_client.player->player_mtx));
+    printf("all ready for a wakeup\n");
+    while (!astrogammon_client.player->took_action) {
+      printf("pre wait, took_action is: %d\n", astrogammon_client.player->took_action);
+      COND_WAIT(&(astrogammon_client.player->player_cond), &(astrogammon_client.player->player_mtx));
+      printf("post wait, took_action is: %d\n", astrogammon_client.player->took_action);
+    }
+    printf("all woken up");
+    game_phase_t game_phase_private;
+    MTX_LOCK(&(astrogammon_client.game->game_mtx));
+    game_phase_private = astrogammon_client.game->phase;
+    MTX_UNLOCK(&(astrogammon_client.game->game_mtx));
+    display_command_tray(game_phase_private, astrogammon_client.player->selected_command);
+    switch (game_phase_private) {
+      case JOIN:
+      case ANTE:
+      case BID:
+      case BUY:
+      case SELECT:
+
+      default:
+        break;
+    }
+    printf("41 astrogammon_client took_action :== false\n");
+    astrogammon_client.player->took_action = false;
+    MTX_UNLOCK(&(astrogammon_client.player->player_mtx));
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_testcancel();
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+  }
+}
+
+void start_astrogammon_client(int width, int height, int max_colors, ssh_channel channel, unsigned int id) {
+  start_astrogammon_gui(width, height, max_colors, channel, id);
+  pthread_create(&(astrogammon_client.pid), NULL, astrogammon_client_task, NULL);
+}
 
 bool join_game(char * game_tag) {
   game_t * game = find_game(game_tag);
@@ -20,9 +60,11 @@ bool join_game(char * game_tag) {
   player->bought_num = 0;
   player->purse = game->ruleset.buy_in_purse;
   player->game_progress = 0;
+  printf("63 astrogammon_client took_action :== false\n");
   player->took_action = false;
   player->game_valid = true;
   player->trick_valid = true;
+  player->selected_command = -1;
   MTX_INIT(&(player->player_mtx));
   COND_INIT(&(player->player_cond));
   MTX_UNLOCK(&(game->game_mtx));
@@ -62,19 +104,22 @@ int handle_input(void *data, uint32_t len, int is_stderr, void *userdata) {
   MTX_LOCK(&(player->player_mtx));
   took_action_private = player->took_action;
   MTX_UNLOCK(&(player->player_mtx));
+  printf("took_action_private %d\n", took_action_private);
   if (took_action_private) return len;
 
   game_phase_t game_phase;
   MTX_LOCK(&(game->game_mtx));
   game_phase = game->phase;
   MTX_UNLOCK(&(game->game_mtx));
+  printf("switch game_phase\n");
   switch (game_phase) {
     case JOIN:
       // closes the game and proceeds to play
       if (control_char == 0x0d) { //ENTER
         MTX_LOCK(&(player->player_mtx));
+        printf("JOIN took_action :== true\n");
         player->took_action = true;
-        COND_SIGNAL(&(player->player_cond));
+        COND_SIGNAL(&(astrogammon_server->server_cond));
         MTX_UNLOCK(&(player->player_mtx));
       }
       break;
@@ -82,16 +127,21 @@ int handle_input(void *data, uint32_t len, int is_stderr, void *userdata) {
     case ANTE:
       switch (control_char) {
         case 0x61: //[A]NTE
+          printf("anted clientside\n");
           MTX_LOCK(&(player->player_mtx));
+          printf("ANTE ANTE took_action :== true\n");
           player->took_action = true;
-          COND_SIGNAL(&(player->player_cond));
+          player->selected_command = 0;
+          COND_SIGNAL(&(astrogammon_server->server_cond));
           MTX_UNLOCK(&(player->player_mtx));
           break;
         case 0x6c: //[L]EAVE
           MTX_LOCK(&(player->player_mtx));
           player->game_valid = false;
+          printf("ANTE LEAVE took_action :== true\n");
           player->took_action = true;
-          COND_SIGNAL(&(player->player_cond));
+          player->selected_command = 1;
+          COND_SIGNAL(&(astrogammon_server->server_cond));
           MTX_UNLOCK(&(player->player_mtx));
           break;
       }
@@ -101,8 +151,9 @@ int handle_input(void *data, uint32_t len, int is_stderr, void *userdata) {
       if (control_char == 0x66) { // [F]OLD
         MTX_LOCK(&(player->player_mtx));
         player->trick_valid = false;
+        printf("BID FOLD took_action :== true\n");
         player->took_action = true;
-        COND_SIGNAL(&(player->player_cond));
+        COND_SIGNAL(&(astrogammon_server->server_cond));
         MTX_UNLOCK(&(player->player_mtx));
       }
       else if (control_char == 0x08) { //BACKSPACE
@@ -117,8 +168,9 @@ int handle_input(void *data, uint32_t len, int is_stderr, void *userdata) {
 
         MTX_LOCK(&(player->player_mtx));
         player->bet = strtol(player->bet_str, NULL, 10);
+        printf("BID BID took_action :== true\n");
         player->took_action = true;
-        COND_SIGNAL(&(player->player_cond));
+        COND_SIGNAL(&(astrogammon_server->server_cond));
         MTX_UNLOCK(&(player->player_mtx));
       }
       else if (control_char == 0x41) { //up-arrow
@@ -158,8 +210,9 @@ int handle_input(void *data, uint32_t len, int is_stderr, void *userdata) {
 
         case 0x0d: //ENTER
           MTX_LOCK(&(player->player_mtx));
+          printf("SELECT SELECT took_action :== true\n");
           player->took_action = true;
-          COND_SIGNAL(&(player->player_cond));
+          COND_SIGNAL(&(astrogammon_server->server_cond));
           MTX_UNLOCK(&(player->player_mtx));
           break;
       }

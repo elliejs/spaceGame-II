@@ -29,14 +29,15 @@ int auth_password_callback(ssh_session session, const char *user, const char *pa
           ssh_client->id, password);
 
   if (!strcmp(user, "astrogammon")) {
-    ssh_client->authenticated = true;
     ssh_client->mode = ASTROGAMMON;
     if (strcmp(password, "")) {
       printf("joining existing game\n");
       join_game((char *) password);
+      ssh_client->authenticated = true;
     } else {
       printf("creating new astrogammon game\n");
       join_game(create_game(create_ruleset_classic()));
+      ssh_client->authenticated = true;
     }
     printf("done\n");
     return SSH_AUTH_SUCCESS;

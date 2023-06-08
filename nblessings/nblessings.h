@@ -52,6 +52,11 @@ pixel_t;
 #define MOVE_Y(Y) CSI, INT2CHARS(Y), (Y) < 0 ? 'A' : 'B'
 #define MOVE_X(X) CSI, INT2CHARS(X), (X) > 0 ? 'C' : 'D'
 
+#define SET_BOLD CSI, '1', 'm'
+#define SET_BOLD_SIZE 4
+#define UNSET_BOLD CSI, '2', '2', 'm'
+#define UNSET_BOLD_SIZE 5
+
 unsigned char * nblessings_header_data(oklab_t * colors, unsigned int num_colors, unsigned int * header_len);
 unsigned char * nblessings_footer_data(unsigned int * footer_len);
 unsigned int rasterize_frame(pixel_t * pixels, unsigned int num_pixels, unsigned int width, unsigned char * buffer);

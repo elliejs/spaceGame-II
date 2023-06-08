@@ -188,7 +188,7 @@ int channel_pty_request_callback(ssh_session session, ssh_channel channel, const
     request_player(ssh_client->id, ssh_client->user_index);
     render_daemon(width, height, 256, ssh_client->channel, ssh_client->id);
   } else {
-    start_astrogammon_gui(width, height, 256, ssh_client->channel, ssh_client->id);
+    start_astrogammon_client(width, height, 256, ssh_client->channel, ssh_client->id);
   }
   printf("\t[ssh_client %u]: pty request successful.\n", ssh_client->id);
   return 0;

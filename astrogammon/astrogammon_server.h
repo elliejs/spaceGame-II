@@ -23,6 +23,7 @@ struct player_s {
   unsigned int bought_num;
   unsigned int purse;
   int game_progress;
+  int selected_command;
 
   FAST_LIST_LAZY_T(card_t *) selection;
   unsigned int selection_ranking;
@@ -86,8 +87,11 @@ typedef
 struct astrogammon_server_s {
   FAST_LIST_T(game_t *, MAX_ACTIVE_GAMES) active_games;
   pthread_mutex_t active_game_mtx;
+    pthread_cond_t server_cond;
 }
 astrogammon_server_t;
+
+extern astrogammon_server_t * astrogammon_server;
 
 game_t * find_game(char * game_id);
 char * create_game(ruleset_t ruleset);

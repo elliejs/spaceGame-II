@@ -3,10 +3,10 @@ OFILES = $(CFILES:.c=.o)
 OBJDIR = build
 OFILESFLAT = $(addprefix $(OBJDIR)/,$(notdir $(OFILES)))
 LFLAGS = -lssh -lm -lpthread
-CFLAGS = -Wunused -msse4.2 -Wno-unused-command-line-argument
+CFLAGS = -Wunused -msse4.2 -Wno-unused-command-line-argument -pg
 
 spacegame : $(OFILES)
-	$(CC) $(OFILESFLAT) -o spaceGame $(LFLAGS)
+	$(CC) $(OFILESFLAT) -pg -o spaceGame $(LFLAGS)
 
 OPTIMIZED :
 	$(eval CFLAGS := $(CFLAGS) -O3 -ffast-math)

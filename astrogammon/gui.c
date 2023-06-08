@@ -77,7 +77,6 @@ bool start_astrogammon_gui(unsigned int width, unsigned int height, unsigned int
 
   ssh_channel_write(gui.channel, header_data, header_len);
 
-
   return true;
 }
 
@@ -91,7 +90,7 @@ unsigned int clear_rect(char * buffer, unsigned int msg_idx, unsigned int offset
   return msg_idx;
 }
 
-unsigned int draw_command_tray(char * buffer, unsigned int msg_idx, unsigned int height, unsigned int width, char *** commands, unsigned int num_commands) {
+unsigned int draw_command_tray(char * buffer, unsigned int msg_idx, unsigned int height, unsigned int width, char *** commands, unsigned int num_commands, int selected_command) {
   unsigned int total_command_len = 2*num_commands;
   for (unsigned int i = 0; i < num_commands; i++) {
     total_command_len += strlen(commands[i][0]) + strlen(commands[i][1]);
@@ -101,6 +100,11 @@ unsigned int draw_command_tray(char * buffer, unsigned int msg_idx, unsigned int
   memcpy(buffer + msg_idx, (unsigned char[]){MOVE_TO(1 + space_around, 1 + height - 3)}, MOVE_TO_SIZE);
   msg_idx += MOVE_TO_SIZE;
   for (unsigned int i = 0; i < num_commands; i++) {
+    if (i == selected_command) {
+      printf("lmao bold\n");
+      memcpy(buffer + msg_idx, (unsigned char[]){SET_BOLD}, SET_BOLD_SIZE);
+      msg_idx += SET_BOLD_SIZE;
+    }
     memcpy(buffer + msg_idx, (unsigned char[]){CRV_CNR_PREFIX, CRV_CNR_UPR_LFT}, CRV_CNR_LEN);
     msg_idx += CRV_CNR_LEN;
     for (unsigned int j = 0; j < strlen(commands[i][0]); j++) {
@@ -109,11 +113,19 @@ unsigned int draw_command_tray(char * buffer, unsigned int msg_idx, unsigned int
     }
     memcpy(buffer + msg_idx, (unsigned char[]){CRV_CNR_PREFIX, CRV_CNR_UPR_RGT, MOVE_X(space_around + strlen(commands[i][1]))}, CRV_CNR_LEN + MOVE_DIR_SIZE);
     msg_idx += CRV_CNR_LEN + MOVE_DIR_SIZE;
+    if (i == selected_command) {
+      memcpy(buffer + msg_idx, (unsigned char[]){UNSET_BOLD}, UNSET_BOLD_SIZE);
+      msg_idx += UNSET_BOLD_SIZE;
+    }
   }
 
   memcpy(buffer + msg_idx, (unsigned char[]){MOVE_TO(1 + space_around, 1 + height - 2)}, MOVE_TO_SIZE);
   msg_idx += MOVE_TO_SIZE;
   for (unsigned int i = 0; i < num_commands; i++) {
+    if (i == selected_command) {
+      memcpy(buffer + msg_idx, (unsigned char[]){SET_BOLD}, SET_BOLD_SIZE);
+      msg_idx += SET_BOLD_SIZE;
+    }
     memcpy(buffer + msg_idx, (unsigned char[]){EDGE_PREFIX, EDGE_VERT}, EDGE_LEN);
     msg_idx += EDGE_LEN;
 
@@ -128,11 +140,19 @@ unsigned int draw_command_tray(char * buffer, unsigned int msg_idx, unsigned int
 
     memcpy(buffer + msg_idx, (unsigned char[]){MOVE_X(space_around)}, MOVE_DIR_SIZE);
     msg_idx += MOVE_DIR_SIZE;
+    if (i == selected_command) {
+      memcpy(buffer + msg_idx, (unsigned char[]){UNSET_BOLD}, UNSET_BOLD_SIZE);
+      msg_idx += UNSET_BOLD_SIZE;
+    }
   }
 
   memcpy(buffer + msg_idx, (unsigned char[]){MOVE_TO(1 + space_around, 1 + height - 1)}, MOVE_TO_SIZE);
   msg_idx += MOVE_TO_SIZE;
   for (unsigned int i = 0; i < num_commands; i++) {
+    if (i == selected_command) {
+      memcpy(buffer + msg_idx, (unsigned char[]){SET_BOLD}, SET_BOLD_SIZE);
+      msg_idx += SET_BOLD_SIZE;
+    }
     memcpy(buffer + msg_idx, (unsigned char[]){CRV_CNR_PREFIX, CRV_CNR_LWR_LFT}, CRV_CNR_LEN);
     msg_idx += CRV_CNR_LEN;
     for (unsigned int j = 0; j < strlen(commands[i][0]); j++) {
@@ -141,6 +161,10 @@ unsigned int draw_command_tray(char * buffer, unsigned int msg_idx, unsigned int
     }
     memcpy(buffer + msg_idx, (unsigned char[]){CRV_CNR_PREFIX, CRV_CNR_LWR_RGT, MOVE_X(space_around + strlen(commands[i][1]))}, CRV_CNR_LEN + MOVE_DIR_SIZE);
     msg_idx += CRV_CNR_LEN + MOVE_DIR_SIZE;
+    if (i == selected_command) {
+      memcpy(buffer + msg_idx, (unsigned char[]){UNSET_BOLD}, UNSET_BOLD_SIZE);
+      msg_idx += UNSET_BOLD_SIZE;
+    }
   }
 
   return msg_idx;
@@ -166,10 +190,11 @@ void write_buff(char * buffer, unsigned int len) {
   }
 }
 
-void display_command_tray(game_phase_t phase) {
+void display_command_tray(game_phase_t phase, int selected_command) {
+  printf("display_command_tray %d\n", selected_command);
   unsigned int msg_idx = 0;
   msg_idx += clear_command_tray(gui.message_buffer, msg_idx, gui.height);
-  msg_idx += draw_command_tray(gui.message_buffer, msg_idx, gui.height, gui.width, command_trays[phase], num_commands_in_tray[phase]);
+  msg_idx += draw_command_tray(gui.message_buffer, msg_idx, gui.height, gui.width, command_trays[phase], num_commands_in_tray[phase], selected_command);
   write_buff(gui.message_buffer, msg_idx);
 }
 
