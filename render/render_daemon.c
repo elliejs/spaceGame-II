@@ -47,12 +47,23 @@ struct {
   int width;
   int height;
   pthread_mutex_t dim_mtx;
+  float quarter_rot_x_sincos[2];
+  float quarter_rot_y_sincos[2];
   float quarter_rot_x;
   float quarter_rot_y;
+
+  float rot_finder_x_sincos[2];
+  float rot_finder_y_sincos[2];
   float rot_finder_x;
   float rot_finder_y;
+
+  float half_fov_x_sincos[2];
+  float half_fov_y_sincos[2];
   float half_fov_x;
   float half_fov_y;
+
+  float (* ray_sincos_width)[2];
+  float (* ray_sincos_height)[2];
 
   pixel_t * framebuffer;
   unsigned char * stream_buffer;
@@ -153,36 +164,48 @@ void enqueue_render() {
   MTX_UNLOCK(&(render_client.job_mtx));
 
   SEM_POSTVAL(render_client.job_sem, 0, NUM_THREADS);
-  const float x_neg_cos_restart = cosf(-render_client.half_fov_x - render_client.quarter_rot_x);
-  const float x_neg_sin_restart = sinf(-render_client.half_fov_x - render_client.quarter_rot_x);
-
-  const float rot_step_y_cos = cosf(render_client.rot_finder_y / 2);
-  const float rot_step_y_sin = sinf(render_client.rot_finder_y / 2);
-
-  const float rot_step_x_cos = cosf(render_client.rot_finder_x / 2);
-  const float rot_step_x_sin = sinf(render_client.rot_finder_x / 2);
-
-  float y_neg_cos = cosf(-render_client.half_fov_y - render_client.quarter_rot_y);
-  float y_neg_sin = sinf(-render_client.half_fov_y - render_client.quarter_rot_y);
-
 
   for (int y = 0; y < render_client.height; y++) {
+    // TODO THIS SHOULD bE LIKE 4 SIMD INSTRUCTIONS
+    // sin(a+b) = sin(a)cos(b) + cos(a)sin(b);
+    float y_pos_sin =
+      render_client.ray_sincos_height[y][0] * render_client.quarter_rot_y_sincos[1] +
+      render_client.ray_sincos_height[y][1] * render_client.quarter_rot_y_sincos[0];
+    // cos(a+b) = cos(a)cos(b) - sin(a)sin(b)
+    float y_pos_cos =
+      render_client.ray_sincos_height[y][1] * render_client.quarter_rot_y_sincos[1] -
+      render_client.ray_sincos_height[y][0] * render_client.quarter_rot_y_sincos[0];
 
-    float y_pos_cos = rot_step_y_cos * y_neg_cos - rot_step_y_sin * y_neg_sin;
-    float y_pos_sin = rot_step_y_sin * y_neg_cos + rot_step_y_cos * y_neg_sin;
+    // sin(a-b) = sin(a)cos(b) - cos(a)sin(b);
+    float y_neg_sin =
+      render_client.ray_sincos_height[y][0] * render_client.quarter_rot_y_sincos[1] -
+      render_client.ray_sincos_height[y][1] * render_client.quarter_rot_y_sincos[0];
+    // cos(a-b) = cos(a)cos(b) + sin(a)sin(b)
+    float y_neg_cos =
+      render_client.ray_sincos_height[y][1] * render_client.quarter_rot_y_sincos[1] +
+      render_client.ray_sincos_height[y][0] * render_client.quarter_rot_y_sincos[0];
 
     const SGVec rot_y_cos = SGVec_Load_Array(((float[]) {y_pos_cos, y_pos_cos, y_neg_cos, y_neg_cos}));
     const SGVec rot_y_sin = SGVec_Load_Array(((float[]) {y_pos_sin, y_pos_sin, y_neg_sin, y_neg_sin}));
 
-    y_neg_cos = rot_step_y_cos * y_pos_cos - rot_step_y_sin * y_pos_sin;
-    y_neg_sin = rot_step_y_sin * y_pos_cos + rot_step_y_cos * y_pos_sin;
-
-    float x_neg_cos = x_neg_cos_restart;
-    float x_neg_sin = x_neg_sin_restart;
-
     for (int x = 0; x < render_client.width; x++) {
-      float x_pos_cos = rot_step_x_cos * x_neg_cos - rot_step_x_sin * x_neg_sin;
-      float x_pos_sin = rot_step_x_sin * x_neg_cos + rot_step_x_cos * x_neg_sin;
+      // sin(a+b) = sin(a)cos(b) + cos(a)sin(b);
+      float x_pos_sin =
+        render_client.ray_sincos_width[x][0] * render_client.quarter_rot_x_sincos[1] +
+        render_client.ray_sincos_width[x][1] * render_client.quarter_rot_x_sincos[0];
+      // cos(a+b) = cos(a)cos(b) - sin(a)sin(b)
+      float x_pos_cos =
+        render_client.ray_sincos_width[x][1] * render_client.quarter_rot_x_sincos[1] -
+        render_client.ray_sincos_width[x][0] * render_client.quarter_rot_x_sincos[0];
+
+      // sin(a-b) = sin(a)cos(b) - cos(a)sin(b);
+      float x_neg_sin =
+        render_client.ray_sincos_width[x][0] * render_client.quarter_rot_x_sincos[1] -
+        render_client.ray_sincos_width[x][1] * render_client.quarter_rot_x_sincos[0];
+      // cos(a-b) = cos(a)cos(b) + sin(a)sin(b)
+      float x_neg_cos =
+        render_client.ray_sincos_width[x][1] * render_client.quarter_rot_x_sincos[1] +
+        render_client.ray_sincos_width[x][0] * render_client.quarter_rot_x_sincos[0];
 
       const SGVec rot_x_cos = SGVec_Load_Array(((float[]) {x_neg_cos, x_pos_cos, x_neg_cos, x_pos_cos}));
       const SGVec rot_x_sin = SGVec_Load_Array(((float[]) {x_neg_sin, x_pos_sin, x_neg_sin, x_pos_sin}));
@@ -211,9 +234,6 @@ void enqueue_render() {
       render_client.pixel_jobs_front = job;
       COND_SIGNAL(&(render_client.job_cond));
       MTX_UNLOCK(&(render_client.job_mtx));
-
-      x_neg_cos = rot_step_x_cos * x_pos_cos - rot_step_x_sin * x_pos_sin;
-      x_neg_sin = rot_step_x_sin * x_pos_cos + rot_step_x_cos * x_pos_sin;
     }
   }
 
@@ -249,15 +269,35 @@ void render_daemon_request_dimensions(int width, int height) {
   render_client.height = height;
   const int largest_dim = width > (2 * height) ? width : (2 * height);
   const float x_ratio = (float) width / (float) largest_dim;
-  const float y_ratio = ((float) 2. * (float) height) / largest_dim;
-
+  const float y_ratio = ((float) 2. * (float) height) / (float) largest_dim;
   render_client.rot_finder_x = (x_ratio * FOV_RAD) / (float) width;
   render_client.rot_finder_y = (y_ratio * FOV_RAD) / (float) height;
+  render_client.rot_finder_x_sincos[0] = sinf(render_client.rot_finder_x); render_client.rot_finder_x_sincos[1] = cosf(render_client.rot_finder_x);
+  render_client.rot_finder_y_sincos[0] = sinf(render_client.rot_finder_y); render_client.rot_finder_y_sincos[1] = cosf(render_client.rot_finder_y);
+
   render_client.quarter_rot_x = render_client.rot_finder_x / (float) 4.;
   render_client.quarter_rot_y = render_client.rot_finder_y / (float) 4.;
+  render_client.quarter_rot_x_sincos[0] = sinf(render_client.quarter_rot_x);
+  render_client.quarter_rot_x_sincos[1] = cosf(render_client.quarter_rot_x);
+  render_client.quarter_rot_y_sincos[0] = sinf(render_client.quarter_rot_y);
+  render_client.quarter_rot_y_sincos[1] = cosf(render_client.quarter_rot_y);
   render_client.half_fov_x = x_ratio * (FOV_RAD / (float) 2.);
   render_client.half_fov_y = y_ratio * (FOV_RAD / (float) 2.);
 
+  render_client.ray_sincos_height = malloc(sizeof(float[2]) * height);
+  render_client.ray_sincos_width = malloc(sizeof(float[2]) * width);
+  for (unsigned int w = 0; w < width; w++) {
+    render_client.ray_sincos_width[w][0]
+      = sinf(-render_client.half_fov_x + w * render_client.rot_finder_x);
+    render_client.ray_sincos_width[w][1]
+      = cosf(-render_client.half_fov_x + w * render_client.rot_finder_x);
+  }
+  for (unsigned int h = 0; h < height; h++) {
+    render_client.ray_sincos_height[h][0]
+      = sinf(-render_client.half_fov_y + h * render_client.rot_finder_y);
+    render_client.ray_sincos_height[h][1]
+      = cosf(-render_client.half_fov_y + h * render_client.rot_finder_y);
+  }
   render_client.framebuffer = realloc(render_client.framebuffer, width * height * sizeof(pixel_t));
   render_client.stream_buffer = realloc(render_client.stream_buffer, MAX_FRAMEBUFFER_SIZE(width, height) * sizeof(char));
   MTX_UNLOCK(&(render_client.dim_mtx));
