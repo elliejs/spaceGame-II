@@ -35,8 +35,8 @@ void generate_chunk(chunk_coord_t abs_coord, chunk_t * chunk) {
       .y = SGVec_Load_Const(rand_between(0, CHUNK_SIZE)),
       .z = SGVec_Load_Const(rand_between(0, CHUNK_SIZE))
     },
-    SGVec_Load_Const(rand_between(10, 100)),
-    SGVec_Load_Const(rand_between(5, 15)),
+    SGVec_Load_Const(rand_between(100, 300)),
+    SGVec_Load_Const(rand_between(20, 40)),
     (SGVecOKLAB_t) {
       .l = SGVec_Load_Const(0.2),
       .a = SGVec_Load_Const(rand_between(1, 50) / 50. - 0.5),

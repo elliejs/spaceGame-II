@@ -18,11 +18,11 @@ SGVec distance(object_t * self, SGVec3D_t point, unsigned int cube_idx, long lon
   SGVecUInt lod = SGVec_Gtr_Than(dist, biggest_radius);
   uint32_t lod_array[4]; SGVecUInt_Store_Array(lod_array, lod);
 
-  float rot_amt = (time % self->planet.revolve_period) / (float) self->planet.revolve_period * M_PI * 2.;
-  SGVec rot_sin = SGVec_Load_Const(sinf(rot_amt));
-  SGVec rot_cos = SGVec_Load_Const(cosf(rot_amt));
-  SGVec4D_t rot_quat = prepare_rot_quat(rot_sin, rot_cos, self->planet.spin_axis);
-  point = rot_vec3d(rot_quat, point);
+  // float rot_amt = (time % self->planet.revolve_period) / (float) self->planet.revolve_period * M_PI * 2.;
+  // SGVec rot_sin = SGVec_Load_Const(sinf(rot_amt));
+  // SGVec rot_cos = SGVec_Load_Const(cosf(rot_amt));
+  // SGVec4D_t rot_quat = prepare_rot_quat(rot_sin, rot_cos, self->planet.spin_axis);
+  // point = rot_vec3d(rot_quat, point);
   SGVec3D_t point_noise_localized = SGVec3D_Add_SGVec3D(point, self->planet.pos_hash);
   float absolute_x[4]; SGVec_Store_Array(absolute_x, point_noise_localized.x);
   float absolute_y[4]; SGVec_Store_Array(absolute_y, point_noise_localized.y);
