@@ -2,8 +2,8 @@ CFILES = $(wildcard */*/*.c */*.c)
 OFILES = $(CFILES:.c=.o)
 OBJDIR = build
 OFILESFLAT = $(addprefix $(OBJDIR)/,$(notdir $(OFILES)))
-LFLAGS = -lssh -lm -lpthread
-CFLAGS = -Wunused -msse4.2 -Wno-unused-command-line-argument
+LFLAGS = -lssh -lm -lpthread -rpath "/usr/local/lib/"
+CFLAGS = -Wunused -Wno-unused-command-line-argument -msse4.2
 
 spacegame : $(OFILES)
 	$(CC) $(OFILESFLAT) -o spaceGame $(LFLAGS)
