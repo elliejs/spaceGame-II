@@ -12,14 +12,15 @@
 #define CHUNK_POW 10
 #define CHUNK_SIZE (1 << CHUNK_POW)
 #define NOISE_DOMAIN_SIZE CHUNK_SIZE << 2
-extern SGVec3D_t chunk_offsets[CUBE_NUM];
 
 #include "../objects/object.h"
+
+#define NUM_CHUNKS 2 * CUBE_NUM
 
 typedef
 struct world_snapshot_s {
   long long time;
-  chunk_t * chunks[2 * CUBE_NUM];
+  chunk_t * chunks[NUM_CHUNKS];
   chunk_t ship_chunks[CUBE_NUM];
   object_t * self;
 }
@@ -49,7 +50,7 @@ void request_player_save(unsigned int id, off_t user_index);
 void request_player_end(unsigned int id);
 
 extern world_server_t * world_server;
-extern SGVec3D_t cube_offsets[CUBE_NUM * 2];
+extern SGVec3D_t cube_offsets[NUM_CHUNKS];
 
 inline
 SGVec3D_t get_cube_offset(unsigned int cube_idx) {
